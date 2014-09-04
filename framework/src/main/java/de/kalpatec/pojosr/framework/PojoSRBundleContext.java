@@ -22,11 +22,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Dictionary;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.osgi.framework.AllServiceListener;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -35,10 +33,8 @@ import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceListener;
-import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
@@ -208,10 +204,6 @@ class PojoSRBundleContext implements BundleContext
         return m_reg.getService(m_bundle, reference);
     }
 
-    public <S> ServiceObjects<S> getServiceObjects(ServiceReference<S> reference) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     public <S> ServiceReference<S> getServiceReference(Class<S> clazz)
     {

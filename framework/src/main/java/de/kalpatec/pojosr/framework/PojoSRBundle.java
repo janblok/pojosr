@@ -48,7 +48,9 @@ import org.osgi.framework.wiring.BundleRevision;
 import org.osgi.framework.wiring.BundleRevisions;
 import org.osgi.framework.wiring.BundleWire;
 import org.osgi.framework.wiring.BundleWiring;
-
+import org.osgi.resource.Capability;
+import org.osgi.resource.Requirement;
+import org.osgi.resource.Wire;
 
 import de.kalpatec.pojosr.framework.felix.framework.ServiceRegistry;
 import de.kalpatec.pojosr.framework.felix.framework.util.EventDispatcher;
@@ -651,6 +653,41 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
                 }
                 return result;
             }
+
+            public List<Capability> getResourceCapabilities(String namespace) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            public List<Requirement> getResourceRequirements(String namespace) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            public List<Wire> getProvidedResourceWires(String namespace) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            public List<Wire> getRequiredResourceWires(String namespace) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            public BundleRevision getResource() {
+                // TODO Auto-generated method stub
+                return null;
+            }
         };
+    }
+
+    public List<Capability> getCapabilities(String namespace) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public List<Requirement> getRequirements(String namespace) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

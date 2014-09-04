@@ -272,7 +272,7 @@ class ServiceRegistrationImpl implements ServiceRegistration
     // ServiceReference implementation
     //
 
-    class ServiceReferenceImpl implements ServiceReference, BundleCapability
+    class ServiceReferenceImpl<S> implements ServiceReference<S>, BundleCapability
     {
         private final ServiceReferenceMap m_map;
 
@@ -290,25 +290,21 @@ class ServiceRegistrationImpl implements ServiceRegistration
         // Capability methods.
         //
 
-        @Override
         public BundleRevision getRevision()
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
-        @Override
         public String getNamespace()
         {
             return "service-reference";
         }
 
-        @Override
         public Map<String, String> getDirectives()
         {
             return Collections.EMPTY_MAP;
         }
 
-        @Override
         public Map<String,Object> getAttributes()
         {
             return m_map;
@@ -482,6 +478,11 @@ class ServiceRegistrationImpl implements ServiceRegistration
 
             // If ranks are equal, then sort by service id in descending order.
             return (id.compareTo(otherId) < 0) ? 1 : -1;
+        }
+
+        public BundleRevision getResource() {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 

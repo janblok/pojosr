@@ -231,5 +231,10 @@ public class PojoServiceRegistryFactoryImpl implements
             return m_bundle.adapt(type);
         }
 
+        public void init(FrameworkListener... listeners) throws BundleException {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
 	}
 }

@@ -24,107 +24,90 @@ import java.util.*;
  * <tt>String</tt> using the <tt>toString()</tt> method, since it is only
  * intended to compare strings.
  **/
-public class StringMap implements Map
-{
-    private TreeMap m_map;
+public class StringMap implements Map<String, Object> {
+    private TreeMap<String, Object> m_map;
 
-    public StringMap()
-    {
+    public StringMap() {
         this(true);
     }
 
-    public StringMap(boolean caseSensitive)
-    {
-        m_map = new TreeMap(new StringComparator(caseSensitive));
+    public StringMap(boolean caseSensitive) {
+        m_map = new TreeMap<>(new StringComparator(caseSensitive));
     }
 
-    public StringMap(Map map, boolean caseSensitive)
-    {
+    public StringMap(Map<String, ?> map, boolean caseSensitive) {
         this(caseSensitive);
         putAll(map);
     }
 
-    public boolean isCaseSensitive()
-    {
+    public void clear() {
+        m_map.clear();
+    }
+
+    public boolean containsKey(Object arg0) {
+        return m_map.containsKey(arg0);
+    }
+
+    public boolean containsValue(Object arg0) {
+        return m_map.containsValue(arg0);
+    }
+
+    public Set<Entry<String, Object>> entrySet() {
+        return m_map.entrySet();
+    }
+
+    public Object get(Object arg0) {
+        return m_map.get(arg0);
+    }
+
+    public boolean isCaseSensitive() {
         return ((StringComparator) m_map.comparator()).isCaseSensitive();
     }
 
-    public void setCaseSensitive(boolean b)
-    {
-        if (isCaseSensitive() != b)
-        {
-            TreeMap map = new TreeMap(new StringComparator(b));
+    public boolean isEmpty() {
+        return m_map.isEmpty();
+    }
+
+    public Set<String> keySet() {
+        return m_map.keySet();
+    }
+
+    public Object put(String key, Object value) {
+        return m_map.put(key, value);
+    }
+
+    @Override
+    public void putAll(Map<? extends String, ? extends Object> map) {
+        for (Iterator<?> it = map
+                .entrySet().iterator(); it.hasNext();) {
+            @SuppressWarnings("rawtypes")
+            Map.Entry entry = (Map.Entry) it.next();
+            put((String) entry.getKey(), entry.getValue());
+        }
+    }
+
+    public Object remove(Object arg0) {
+        return m_map.remove(arg0);
+    }
+
+    public void setCaseSensitive(boolean b) {
+        if (isCaseSensitive() != b) {
+            TreeMap<String, Object> map = new TreeMap<>(new StringComparator(b));
             map.putAll(m_map);
             m_map = map;
         }
     }
 
-    public int size()
-    {
+    public int size() {
         return m_map.size();
     }
 
-    public boolean isEmpty()
-    {
-        return m_map.isEmpty();
+    public String toString() {
+        return m_map.toString();
     }
 
-    public boolean containsKey(Object arg0)
-    {
-        return m_map.containsKey(arg0);
-    }
-
-    public boolean containsValue(Object arg0)
-    {
-        return m_map.containsValue(arg0);
-    }
-
-    public Object get(Object arg0)
-    {
-        return m_map.get(arg0);
-    }
-
-    public Object put(Object key, Object value)
-    {
-        return m_map.put(key.toString(), value);
-    }
-
-    public void putAll(Map map)
-    {
-        for (Iterator it = map.entrySet().iterator(); it.hasNext();)
-        {
-            Map.Entry entry = (Map.Entry) it.next();
-            put(entry.getKey(), entry.getValue());
-        }
-    }
-
-    public Object remove(Object arg0)
-    {
-        return m_map.remove(arg0);
-    }
-
-    public void clear()
-    {
-        m_map.clear();
-    }
-
-    public Set keySet()
-    {
-        return m_map.keySet();
-    }
-
-    public Collection values()
-    {
+    public Collection<Object> values() {
         return m_map.values();
     }
 
-    public Set entrySet()
-    {
-        return m_map.entrySet();
-    }
-
-    public String toString()
-    {
-        return m_map.toString();
-    }
 }

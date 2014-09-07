@@ -23,11 +23,11 @@ import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
-public interface PojoServiceRegistry
-{
+public interface PojoServiceRegistry {
+    
     public BundleContext getBundleContext();
-	
-	public void startBundles(List<BundleDescriptor> bundles) throws Exception;
+
+    public void startBundles(List<BundleDescriptor> bundles) throws Exception;
 
     public void addServiceListener(ServiceListener listener, String filter)
             throws InvalidSyntaxException;
@@ -36,18 +36,19 @@ public interface PojoServiceRegistry
 
     public void removeServiceListener(ServiceListener listener);
 
-    public ServiceRegistration registerService(String[] clazzes,
-            Object service, @SuppressWarnings("rawtypes") Dictionary properties);
+    public ServiceRegistration<?> registerService(String[] clazzes,
+            Object service,
+            Dictionary<String, ?> properties);
 
-    public ServiceRegistration registerService(String clazz, Object service,
-            @SuppressWarnings("rawtypes") Dictionary properties);
+    public ServiceRegistration<?> registerService(String clazz, Object service,
+            Dictionary<String, ?> properties);
 
-    public ServiceReference[] getServiceReferences(String clazz, String filter)
+    public ServiceReference<?>[] getServiceReferences(String clazz, String filter)
             throws InvalidSyntaxException;
 
-    public ServiceReference getServiceReference(String clazz);
+    public ServiceReference<?> getServiceReference(String clazz);
 
-    public Object getService(ServiceReference reference);
+    public <S> S getService(ServiceReference<S> reference);
 
-    public boolean ungetService(ServiceReference reference);
+    public boolean ungetService(ServiceReference<?> reference);
 }

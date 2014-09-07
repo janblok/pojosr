@@ -61,7 +61,7 @@ public class PojoSR implements PojoServiceRegistry
             {
 
                 public void serviceChanged(ServiceEvent event,
-                        Dictionary oldProps)
+                        Dictionary<String, Object> oldProps)
                 {
                     m_dispatcher.fireServiceEvent(event, oldProps, null);
                 }
@@ -70,8 +70,8 @@ public class PojoSR implements PojoServiceRegistry
     private final EventDispatcher m_dispatcher = new EventDispatcher(m_reg);
     private final Map<Long, Bundle> m_bundles =new HashMap<Long, Bundle>();
     private final Map<String, Bundle> m_symbolicNameToBundle = new HashMap<String, Bundle>();
-    private final Map bundleConfig;
-    public PojoSR(Map config) throws Exception
+    private final Map<String, Object> bundleConfig;
+    public PojoSR(Map<String, Object> config) throws Exception
     {
         final Map<String, String> headers = new HashMap<String, String>();
         headers.put(Constants.BUNDLE_SYMBOLICNAME,
@@ -80,7 +80,7 @@ public class PojoSR implements PojoServiceRegistry
         headers.put(Constants.BUNDLE_NAME, "System Bundle");
         headers.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		headers.put(Constants.BUNDLE_VENDOR, "kalpatec");
-        bundleConfig = new HashMap(config);
+        bundleConfig = new HashMap<>(config);
         final Bundle b = new PojoSRBundle(new Revision()
         {
 
@@ -91,6 +91,7 @@ public class PojoSR implements PojoServiceRegistry
                 return System.currentTimeMillis();
             }
 
+            @SuppressWarnings({ "unchecked", "rawtypes" })
             @Override
             public Enumeration getEntries()
             {
@@ -418,7 +419,7 @@ public class PojoSR implements PojoServiceRegistry
     public static void main(String[] args) throws Exception
     {
     	Filter filter = null;
-    	Class main = null;
+    	Class<?> main = null;
     	for (int i = 0;(args != null) && (i < args.length) && (i < 2); i++) {
 	    	try {
 	    		filter = FrameworkUtil.createFilter(args[i]);
@@ -430,7 +431,7 @@ public class PojoSR implements PojoServiceRegistry
 	    		}
 	    	}
     	}
-        Map config = new HashMap();
+        Map<String,Object> config = new HashMap<>();
         config.put(
                 PojoServiceRegistryFactory.BUNDLE_DESCRIPTORS,
                 (filter != null) ? new ClasspathScanner()
@@ -475,35 +476,35 @@ public class PojoSR implements PojoServiceRegistry
         m_context.removeServiceListener(listener);
     }
 
-    public ServiceRegistration registerService(String[] clazzes,
-            Object service, Dictionary properties)
+    public ServiceRegistration<?> registerService(String[] clazzes,
+            Object service, Dictionary<String, ?> properties)
     {
         return m_context.registerService(clazzes, service, properties);
     }
 
-    public ServiceRegistration registerService(String clazz, Object service,
-            Dictionary properties)
+    public ServiceRegistration<?> registerService(String clazz, Object service,
+            Dictionary<String, ?> properties)
     {
         return m_context.registerService(clazz, service, properties);
     }
 
-    public ServiceReference[] getServiceReferences(String clazz, String filter)
+    public ServiceReference<?>[] getServiceReferences(String clazz, String filter)
             throws InvalidSyntaxException
     {
         return m_context.getServiceReferences(clazz, filter);
     }
 
-    public ServiceReference getServiceReference(String clazz)
+    public ServiceReference<?> getServiceReference(String clazz)
     {
         return m_context.getServiceReference(clazz);
     }
 
-    public Object getService(ServiceReference reference)
+    public <S> S getService(ServiceReference<S> reference)
     {
         return m_context.getService(reference);
     }
 
-    public boolean ungetService(ServiceReference reference)
+    public boolean ungetService(ServiceReference<?> reference)
     {
         return m_context.ungetService(reference);
     }

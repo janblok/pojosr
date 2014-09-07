@@ -35,6 +35,7 @@ import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceListener;
+import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
@@ -46,12 +47,12 @@ class PojoSRBundleContext implements BundleContext
 {
     private final Bundle m_bundle;
     private final Map<Long, Bundle> m_bundles;
-    private final Map m_config;
+    private final Map<String,?> m_config;
     private final EventDispatcher m_dispatcher;
     private final ServiceRegistry m_reg;
 
     public PojoSRBundleContext(Bundle bundle, ServiceRegistry reg,
-            EventDispatcher dispatcher, Map<Long, Bundle> bundles, Map config)
+            EventDispatcher dispatcher, Map<Long, Bundle> bundles, Map<String,?> config)
     {
         m_bundle = bundle;
         m_reg = reg;
@@ -112,7 +113,7 @@ class PojoSRBundleContext implements BundleContext
                 throw new InvalidSyntaxException(ex.getMessage(), filter);
             }
         }
-        List<ServiceReference<?>> result = m_reg.getServiceReferences(clazz,
+        List<?> result = m_reg.getServiceReferences(clazz,
                 simple);
         return result.isEmpty() ? null : result
                 .toArray(new ServiceReference[result.size()]);
@@ -205,6 +206,14 @@ class PojoSRBundleContext implements BundleContext
     }
 
 
+    @Override
+    public <S> ServiceObjects<S> getServiceObjects(ServiceReference<S> reference) {
+        if (reference == null)
+            throw new NullPointerException("A null service reference is not allowed.");
+        ServiceObjects<S> serviceObjects = m_reg.getServiceObjects(this, reference);
+        return serviceObjects;
+    }
+
     public <S> ServiceReference<S> getServiceReference(Class<S> clazz)
     {
         return (ServiceReference<S>) getServiceReference(clazz.getName());
@@ -239,12 +248,12 @@ class PojoSRBundleContext implements BundleContext
         return getAllServiceReferences(clazz, filter);
     }
 
-    public Bundle installBundle(String location) throws BundleException
+     public Bundle installBundle(String location) throws BundleException
     {
         throw new BundleException("pojosr can't do that");
     }
 
-     public Bundle installBundle(String location, InputStream input)
+    public Bundle installBundle(String location, InputStream input)
             throws BundleException
     {
         throw new BundleException("pojosr can't do that");

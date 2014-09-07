@@ -19,20 +19,19 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.security.cert.X509Certificate;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
-import org.osgi.framework.BundleListener;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
-import org.osgi.framework.ServiceEvent;
-import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
@@ -46,12 +45,12 @@ import de.kalpatec.pojosr.framework.launch.PojoServiceRegistryFactory;
 public class PojoServiceRegistryFactoryImpl implements
 		PojoServiceRegistryFactory, FrameworkFactory {
 
-	public PojoServiceRegistry newPojoServiceRegistry(Map configuration)
+	public PojoServiceRegistry newPojoServiceRegistry(Map<String, Object> configuration)
 			throws Exception {
 		return new PojoSR(configuration);
 	}
 
-	public Framework newFramework(Map configuration) {
+	public Framework newFramework(Map<String, String> configuration) {
 		return new FrameworkImpl((String) configuration.get("pojosr.filter"));
 	}
 
@@ -67,7 +66,7 @@ public class PojoServiceRegistryFactoryImpl implements
 		public void init() throws BundleException {
 			try {
 				m_reg = new PojoServiceRegistryFactoryImpl()
-				.newPojoServiceRegistry(new HashMap());
+				.newPojoServiceRegistry(new HashMap<String,Object>());
 				m_bundle = m_reg.getBundleContext()
 						.getBundle();
 			} catch (Exception ex) {
@@ -113,7 +112,7 @@ public class PojoServiceRegistryFactoryImpl implements
 			m_bundle.uninstall();
 		}
 
-		public Dictionary getHeaders() {
+		public Dictionary<String,String> getHeaders() {
 			return m_bundle.getHeaders();
 		}
 
@@ -125,11 +124,11 @@ public class PojoServiceRegistryFactoryImpl implements
 			return m_bundle.getLocation();
 		}
 
-		public ServiceReference[] getRegisteredServices() {
+		public ServiceReference<?>[] getRegisteredServices() {
 			return m_bundle.getRegisteredServices();
 		}
 
-		public ServiceReference[] getServicesInUse() {
+		public ServiceReference<?>[] getServicesInUse() {
 			return m_bundle.getServicesInUse();
 		}
 
@@ -141,7 +140,7 @@ public class PojoServiceRegistryFactoryImpl implements
 			return m_bundle.getResource(name);
 		}
 
-		public Dictionary getHeaders(String locale) {
+		public Dictionary<String,String> getHeaders(String locale) {
 			return m_bundle.getHeaders(locale);
 		}
 
@@ -149,15 +148,15 @@ public class PojoServiceRegistryFactoryImpl implements
 			return m_bundle.getSymbolicName();
 		}
 
-		public Class loadClass(String name) throws ClassNotFoundException {
+		public Class<?> loadClass(String name) throws ClassNotFoundException {
 			return m_bundle.loadClass(name);
 		}
 
-		public Enumeration getResources(String name) throws IOException {
+		public Enumeration<URL> getResources(String name) throws IOException {
 			return m_bundle.getResources(name);
 		}
 
-		public Enumeration getEntryPaths(String path) {
+		public Enumeration<String> getEntryPaths(String path) {
 			return m_bundle.getEntryPaths(path);
 		}
 
@@ -169,7 +168,7 @@ public class PojoServiceRegistryFactoryImpl implements
 			return m_bundle.getLastModified();
 		}
 
-		public Enumeration findEntries(String path, String filePattern,
+		public Enumeration<URL> findEntries(String path, String filePattern,
 				boolean recurse) {
 			return m_bundle.findEntries(path, filePattern, recurse);
 		}
@@ -178,7 +177,7 @@ public class PojoServiceRegistryFactoryImpl implements
 			return m_bundle.getBundleContext();
 		}
 
-		public Map getSignerCertificates(int signersType) {
+		public Map<X509Certificate, List<X509Certificate>> getSignerCertificates(int signersType) {
 			return m_bundle.getSignerCertificates(signersType);
 		}
 

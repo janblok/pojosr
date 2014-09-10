@@ -63,13 +63,13 @@ public class SimpleFilter
         switch (m_op)
         {
         case AND:
-            s = "(&" + toString((List) m_value) + ")";
+            s = "(&" + toString((List<?>) m_value) + ")";
             break;
         case OR:
-            s = "(|" + toString((List) m_value) + ")";
+            s = "(|" + toString((List<?>) m_value) + ")";
             break;
         case NOT:
-            s = "(!" + toString((List) m_value) + ")";
+            s = "(!" + toString((List<?>) m_value) + ")";
             break;
         case EQ:
             s = "(" + m_name + "=" + toEncodedString(m_value) + ")";
@@ -94,7 +94,7 @@ public class SimpleFilter
         return s;
     }
 
-    private static String toString(List list)
+    private static String toString(List<?> list)
     {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < list.size(); i++)
@@ -163,7 +163,7 @@ public class SimpleFilter
         }
 
         SimpleFilter sf = null;
-        List stack = new ArrayList();
+        List<Object> stack = new ArrayList<Object>();
         boolean isEscaped = false;
         while (idx < filter.length())
         {
@@ -184,7 +184,7 @@ public class SimpleFilter
                     if (filter.charAt(peek) == '(')
                     {
                         idx = peek - 1;
-                        stack.add(0, new SimpleFilter(null, new ArrayList(),
+                        stack.add(0, new SimpleFilter(null, new ArrayList<Object>(),
                                 SimpleFilter.AND));
                     }
                     else
@@ -198,7 +198,7 @@ public class SimpleFilter
                     if (filter.charAt(peek) == '(')
                     {
                         idx = peek - 1;
-                        stack.add(0, new SimpleFilter(null, new ArrayList(),
+                        stack.add(0, new SimpleFilter(null, new ArrayList<Object>(),
                                 SimpleFilter.OR));
                     }
                     else
@@ -212,7 +212,7 @@ public class SimpleFilter
                     if (filter.charAt(peek) == '(')
                     {
                         idx = peek - 1;
-                        stack.add(0, new SimpleFilter(null, new ArrayList(),
+                        stack.add(0, new SimpleFilter(null, new ArrayList<Object>(),
                                 SimpleFilter.NOT));
                     }
                     else
@@ -233,7 +233,7 @@ public class SimpleFilter
                     if (!stack.isEmpty()
                             && (stack.get(0) instanceof SimpleFilter))
                     {
-                        ((List) ((SimpleFilter) stack.get(0)).m_value).add(top);
+                        ((List<Object>) ((SimpleFilter) stack.get(0)).m_value).add(top);
                     }
                     else
                     {
@@ -243,7 +243,7 @@ public class SimpleFilter
                 else if (!stack.isEmpty()
                         && (stack.get(0) instanceof SimpleFilter))
                 {
-                    ((List) ((SimpleFilter) stack.get(0)).m_value)
+                    ((List<SimpleFilter>) ((SimpleFilter) stack.get(0)).m_value)
                             .add(SimpleFilter.subfilter(filter,
                                     ((Integer) top).intValue(), idx));
                 }
@@ -369,7 +369,7 @@ public class SimpleFilter
 
     public static List<String> parseSubstring(String value)
     {
-        List<String> pieces = new ArrayList();
+        List<String> pieces = new ArrayList<String>();
         StringBuffer ss = new StringBuffer();
         // int kind = SIMPLE; // assume until proven otherwise
         boolean wasStar = false; // indicates last piece was a star

@@ -22,10 +22,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 
-import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 
@@ -153,7 +150,7 @@ public class ClasspathScanner
 					}
 				}
                 if ((filter == null)
-                        || filter.match(new MapToDictionary(headers)))
+                        || filter.match(new MapToDictionary<String,String>(headers)))
                 {
                     bundles.add(new BundleDescriptor(loader, getParentURL(manifestURL),
                             headers));

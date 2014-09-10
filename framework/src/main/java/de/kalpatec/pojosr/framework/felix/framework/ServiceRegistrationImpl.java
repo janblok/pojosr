@@ -15,19 +15,26 @@
  */
 package de.kalpatec.pojosr.framework.felix.framework;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import org.osgi.framework.*;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceException;
+import org.osgi.framework.ServiceFactory;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
+import org.osgi.framework.wiring.BundleCapability;
+import org.osgi.framework.wiring.BundleRevision;
 
-import de.kalpatec.pojosr.framework.felix.framework.capabilityset.Attribute;
-import de.kalpatec.pojosr.framework.felix.framework.capabilityset.Capability;
-import de.kalpatec.pojosr.framework.felix.framework.capabilityset.Directive;
 import de.kalpatec.pojosr.framework.felix.framework.util.MapToDictionary;
 import de.kalpatec.pojosr.framework.felix.framework.util.StringMap;
 import de.kalpatec.pojosr.framework.felix.framework.util.Util;
-
-import org.osgi.framework.wiring.BundleCapability;
-import org.osgi.framework.wiring.BundleRevision;
 
 class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
     // Service registry.
@@ -45,10 +52,11 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
     // Associated property dictionary.
     private volatile Map<String,Object> m_propMap = new StringMap(false);
     // Re-usable service reference.
-    private final ServiceReferenceImpl<S> m_ref;
+    private final ServiceReferenceImpl m_ref;
     // Flag indicating that we are unregistering.
     private volatile boolean m_isUnregistering = false;
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public ServiceRegistrationImpl(ServiceRegistry registry, Bundle bundle,
             String[] classes, Long serviceId, Object svcObj,
             Dictionary<String, ?> dict) {
@@ -85,7 +93,7 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
     }
 
     public void setProperties(Dictionary<String, ?> dict) {
-        Map<String, ?> oldProps;
+        Map<String, Object> oldProps;
         synchronized (this) {
             // Make sure registration is valid.
             if (!isValid()) {
@@ -99,7 +107,7 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
         }
         // Tell registry about it.
         m_registry.servicePropertiesModified(this,
-                new MapToDictionary(oldProps));
+                new MapToDictionary<String, Object>(oldProps));
     }
 
     public void unregister() {
@@ -124,8 +132,8 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
     }
 
     private String[] getPropertyKeys() {
-        Set s = m_propMap.keySet();
-        return (String[]) s.toArray(new String[s.size()]);
+        Set<String> s = m_propMap.keySet();
+        return s.toArray(new String[s.size()]);
     }
 
     private Bundle[] getUsingBundles() {
@@ -231,7 +239,7 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
     // ServiceReference implementation
     //
 
-    class ServiceReferenceImpl<S> implements ServiceReference<S>,
+    class ServiceReferenceImpl implements ServiceReference<S>,
             BundleCapability {
         private final ServiceReferenceMap m_map;
 
@@ -239,7 +247,7 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
             m_map = new ServiceReferenceMap();
         }
 
-        ServiceRegistrationImpl getRegistration() {
+        ServiceRegistrationImpl<S> getRegistration() {
             return ServiceRegistrationImpl.this;
         }
 
@@ -256,7 +264,7 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
         }
 
         public Map<String, String> getDirectives() {
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         }
 
         public Map<String, Object> getAttributes() {
@@ -264,7 +272,7 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
         }
 
         public List<String> getUses() {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         public Object getProperty(String s) {
@@ -385,7 +393,7 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
         }
 
         public int compareTo(Object reference) {
-            ServiceReference other = (ServiceReference) reference;
+            ServiceReference<?> other = (ServiceReference<?>) reference;
 
             Long id = (Long) getProperty(Constants.SERVICE_ID);
             Long otherId = (Long) other.getProperty(Constants.SERVICE_ID);
@@ -426,7 +434,7 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
         }
     }
 
-    private class ServiceReferenceMap implements Map {
+    private class ServiceReferenceMap implements Map<String,Object> {
         public int size() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -447,7 +455,7 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
             return ServiceRegistrationImpl.this.getProperty((String) o);
         }
 
-        public Object put(Object k, Object v) {
+        public Object put(String k, Object v) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -455,7 +463,8 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
-        public void putAll(Map map) {
+        @Override
+        public void putAll(Map<? extends String, ? extends Object> m) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -463,7 +472,7 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
-        public Set<Object> keySet() {
+        public Set<String> keySet() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -471,8 +480,9 @@ class ServiceRegistrationImpl<S> implements ServiceRegistration<S> {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
-        public Set<Entry<Object, Object>> entrySet() {
+        public Set<Entry<String, Object>> entrySet() {
             return Collections.emptySet();
         }
+
     }
 }

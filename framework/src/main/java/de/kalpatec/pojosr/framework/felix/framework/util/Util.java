@@ -200,9 +200,9 @@ public class Util
      *            the name of the class to load.
      * @return the loaded class or <tt>null</tt> if it could not be loaded.
      **/
-    public static Class loadClassUsingClass(Class clazz, String name)
+    public static Class<?> loadClassUsingClass(Class<?> clazz, String name)
     {
-        Class loadedClass = null;
+        Class<?> loadedClass = null;
 
         while (clazz != null)
         {
@@ -223,7 +223,7 @@ public class Util
             // Try to see if we can load the class from
             // one of the class's implemented interface
             // class loaders.
-            Class[] ifcs = clazz.getInterfaces();
+            Class<?>[] ifcs = clazz.getInterfaces();
             for (int i = 0; i < ifcs.length; i++)
             {
                 loadedClass = loadClassUsingClass(ifcs[i], name);
@@ -254,7 +254,7 @@ public class Util
      *         service object to a known type.
      **/
     public static boolean isServiceAssignable(Bundle requester,
-            ServiceReference ref)
+            ServiceReference<?> ref)
     {
         // Boolean flag.
         boolean allow = true;
@@ -421,14 +421,14 @@ public class Util
      *             If there was a syntax error in the property placeholder
      *             syntax or a recursive variable reference.
      **/
-    public static String substVars(String val, String currentKey, Map cycleMap,
+    public static String substVars(String val, String currentKey, Map<String,String> cycleMap,
             Properties configProps) throws IllegalArgumentException
     {
         // If there is currently no cycle map, then create
         // one for detecting cycles for this invocation.
         if (cycleMap == null)
         {
-            cycleMap = new HashMap();
+            cycleMap = new HashMap<String,String>();
         }
 
         // Put the current key in the cycle map.

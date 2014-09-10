@@ -72,7 +72,7 @@ public class ShrinkableCollection<T> implements Collection<T>
         return m_delegate.isEmpty();
     }
 
-    public Iterator iterator()
+    public Iterator<T> iterator()
     {
         return m_delegate.iterator();
     }

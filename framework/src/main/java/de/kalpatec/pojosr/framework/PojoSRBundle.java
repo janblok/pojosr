@@ -39,9 +39,11 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
 import org.osgi.framework.startlevel.BundleStartLevel;
+import org.osgi.framework.startlevel.FrameworkStartLevel;
 import org.osgi.framework.wiring.BundleCapability;
 import org.osgi.framework.wiring.BundleRequirement;
 import org.osgi.framework.wiring.BundleRevision;
@@ -528,6 +530,31 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
                 {
                     return false;
                 }};
+        }
+        else if (type == FrameworkStartLevel.class)
+        {
+        	return (A) new FrameworkStartLevel() {
+				
+				public Bundle getBundle() {
+                    return PojoSRBundle.this;
+				}
+				
+				public void setStartLevel(int startlevel, FrameworkListener... listeners) {
+                    // TODO Implement this?
+				}
+				
+				public void setInitialBundleStartLevel(int startlevel) {
+                    // TODO Implement this?
+				}
+				
+				public int getStartLevel() {
+					return 1;
+				}
+				
+				public int getInitialBundleStartLevel() {
+					return 1;
+				}
+			};
         }
         else if (type == BundleRevisions.class)
         {

@@ -1,2 +1,6 @@
 /target/
 /maven-eclipse.xml
+/.externalToolBuilders
+/.settings
+/.classpath
+/.project

@@ -31,9 +31,9 @@ import org.osgi.framework.ServiceReference;
 
 public class Util
 {
-    /**
+    /*
      * The default name used for the default configuration properties file.
-     **/
+     */
     private static final String DEFAULT_PROPERTIES_FILE = "default.properties";
 
     public static String getDefaultProperty(String name)
@@ -80,7 +80,8 @@ public class Util
      * Converts a module identifier to a bundle identifier. Module IDs are
      * typically <tt>&lt;bundle-id&gt;.&lt;revision&gt;</tt>; this method
      * returns only the portion corresponding to the bundle ID.
-     **/
+     * @param id the module id
+     */
     public static long getBundleIdFromModuleId(String id)
     {
         try
@@ -99,7 +100,8 @@ public class Util
      * Converts a module identifier to a bundle identifier. Module IDs are
      * typically <tt>&lt;bundle-id&gt;.&lt;revision&gt;</tt>; this method
      * returns only the portion corresponding to the revision.
-     **/
+     * @param id the module id
+     */
     public static int getModuleRevisionFromModuleId(String id)
     {
         try
@@ -194,7 +196,7 @@ public class Util
      * interfaces it implements and the class loaders of all super classes.
      * </p>
      * 
-     * @param svcObj
+     * @param clazz
      *            the class that is the root of the search.
      * @param name
      *            the name of the class to load.
@@ -520,5 +522,4 @@ public class Util
         // Return the value.
         return val;
     }
-
 }

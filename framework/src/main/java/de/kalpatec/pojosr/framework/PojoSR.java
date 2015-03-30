@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.jar.Attributes;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -59,31 +60,39 @@ public class PojoSR implements PojoServiceRegistry
     private final ServiceRegistry m_reg = new ServiceRegistry(
             new ServiceRegistry.ServiceRegistryCallbacks()
             {
-
-                public void serviceChanged(ServiceEvent event,
-                        Dictionary<String, Object> oldProps)
+                public void serviceChanged(ServiceEvent event, Dictionary<String, Object> oldProps)
                 {
                     m_dispatcher.fireServiceEvent(event, oldProps, null);
                 }
             });
-
     private final EventDispatcher m_dispatcher = new EventDispatcher(m_reg);
     private final Map<Long, Bundle> m_bundles =new HashMap<Long, Bundle>();
     private final Map<String, Bundle> m_symbolicNameToBundle = new HashMap<String, Bundle>();
     private final Map<String, Object> bundleConfig;
+    
     public PojoSR(Map<String, Object> config) throws Exception
     {
-        final Map<String, String> headers = new HashMap<String, String>();
-        headers.put(Constants.BUNDLE_SYMBOLICNAME,
-                "de.kalpatec.pojosr.framework");
-        headers.put(Constants.BUNDLE_VERSION, "0.3.0-SNAPSHOT");
+        bundleConfig = new HashMap<>(config);
+        Bundle b = createPojoSRFrameworkBundle();
+        m_context = b.getBundleContext();
+
+        List<BundleDescriptor> scan = (List<BundleDescriptor>) config.get(PojoServiceRegistryFactory.BUNDLE_DESCRIPTORS);
+        if (scan != null)
+        {
+            startBundles(scan);
+		}
+    }
+
+	private Bundle createPojoSRFrameworkBundle() throws BundleException 
+	{
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put(Constants.BUNDLE_SYMBOLICNAME, "de.kalpatec.pojosr.framework");
+        headers.put(Constants.BUNDLE_VERSION, "0.4.0-SNAPSHOT");
         headers.put(Constants.BUNDLE_NAME, "System Bundle");
         headers.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		headers.put(Constants.BUNDLE_VENDOR, "kalpatec");
-        bundleConfig = new HashMap<>(config);
-        final Bundle b = new PojoSRBundle(new Revision()
+		final Bundle b = new PojoSRBundle(new Revision()
         {
-
             @Override
             public long getLastModified()
             {
@@ -126,12 +135,13 @@ public class PojoSR implements PojoServiceRegistry
                     {
                         if (b != this)
                         {
+                        	System.out.println("Starting " + i + " "+b.getSymbolicName());
                             b.start();
                         }
                     }
                     catch (Throwable t)
                     {
-                    	System.out.println("Unable to start bundle: " + i );
+                    	System.out.println("Unable to start bundle: " + i + " "+b.getSymbolicName());
                     	t.printStackTrace();
                     }
                 }
@@ -142,6 +152,7 @@ public class PojoSR implements PojoServiceRegistry
                 m_dispatcher.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.STARTED, this, null));
         		super.start();
         	};
+        	
             @Override
             public synchronized void stop() throws BundleException
             {
@@ -315,105 +326,95 @@ public class PojoSR implements PojoServiceRegistry
                         return m_context.getBundle();
                     }
                 }, null);
-        m_context = b.getBundleContext();
+		return b;
+	}
 
-        List<BundleDescriptor> scan = (List<BundleDescriptor>) config
-                .get(PojoServiceRegistryFactory.BUNDLE_DESCRIPTORS);
-
-        if (scan != null)
+	public void startBundles(List<BundleDescriptor> scan) throws Exception 
+	{
+		for (BundleDescriptor desc : scan)
         {
-            startBundles(scan);
-		}
-    }
-
-	public void startBundles(List<BundleDescriptor> scan) throws Exception {
-	 for (BundleDescriptor desc : scan)
+            URL u = new URL(desc.getUrl().toExternalForm() + "META-INF/MANIFEST.MF");
+            Revision r;
+            if (u.toExternalForm().startsWith("file:"))
             {
-                URL u = new URL(desc.getUrl().toExternalForm()
-                        + "META-INF/MANIFEST.MF");
-                Revision r;
-                if (u.toExternalForm().startsWith("file:"))
+                File root = new File(URLDecoder.decode(desc.getUrl()
+                        .getFile(), "UTF-8"));
+                u = root.toURL();
+                r = new DirRevision(root);
+            }
+            else
+            {
+                URLConnection uc = u.openConnection();
+                if (uc instanceof JarURLConnection)
                 {
-                    File root = new File(URLDecoder.decode(desc.getUrl()
-                            .getFile(), "UTF-8"));
-                    u = root.toURL();
-                    r = new DirRevision(root);
+				    String target = ((JarURLConnection) uc).getJarFileURL().toExternalForm();
+					String prefix = null;
+					if (!("jar:" + target + "!/").equals(desc.getUrl().toExternalForm())) {
+					    prefix = desc.getUrl().toExternalForm().substring(("jar:" + target + "!/").length());
+					}
+                    r = new JarRevision(
+                            ((JarURLConnection) uc).getJarFile(),
+                            ((JarURLConnection) uc).getJarFileURL(),
+							prefix,
+                            uc.getLastModified());
                 }
                 else
                 {
-                    URLConnection uc = u.openConnection();
-                    if (uc instanceof JarURLConnection)
-                    {
-					    String target = ((JarURLConnection) uc).getJarFileURL().toExternalForm();
-						String prefix = null;
-						if (!("jar:" + target + "!/").equals(desc.getUrl().toExternalForm())) {
-						    prefix = desc.getUrl().toExternalForm().substring(("jar:" + target + "!/").length());
-						}
-                        r = new JarRevision(
-                                ((JarURLConnection) uc).getJarFile(),
-                                ((JarURLConnection) uc).getJarFileURL(),
-								prefix,
-                                uc.getLastModified());
-                    }
-                    else
-                    {
-                        r = new URLRevision(desc.getUrl(), desc.getUrl()
-                                .openConnection().getLastModified());
-                    }
+                    r = new URLRevision(desc.getUrl(), desc.getUrl()
+                            .openConnection().getLastModified());
                 }
-                Map<String, String> bundleHeaders = desc.getHeaders();
-				Version osgiVersion = null;
-				try {
-					osgiVersion = Version.parseVersion(bundleHeaders.get(Constants.BUNDLE_VERSION));
-				} catch (Exception ex) {
-					ex.printStackTrace();
-					osgiVersion = Version.emptyVersion;
-				}
-                String sym = bundleHeaders.get(Constants.BUNDLE_SYMBOLICNAME);
-                    if (sym != null)
-                    {
-                        int idx = sym.indexOf(';');
-                        if (idx > 0)
-                        {
-                            sym = sym.substring(0, idx);
-                        }
-						sym = sym.trim();
-                    }
-
-                if ((sym == null)
-                        || !m_symbolicNameToBundle.containsKey( sym ))
+            }
+            Map<String,String> bundleHeaders = desc.getManifestHeaders();
+			Version osgiVersion = null;
+			try {
+				osgiVersion = Version.parseVersion(bundleHeaders.get(Constants.BUNDLE_VERSION));
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				osgiVersion = Version.emptyVersion;
+			}
+            String sym = bundleHeaders.get(Constants.BUNDLE_SYMBOLICNAME);
+            if (sym != null)
+            {
+                int idx = sym.indexOf(';');
+                if (idx > 0)
                 {
-                    // TODO: framework - support multiple versions
-                    Bundle bundle = new PojoSRBundle(r, bundleHeaders,
-                            osgiVersion, desc.getUrl().toExternalForm(), m_reg,
-                            m_dispatcher,
-                            bundleHeaders.get(Constants.BUNDLE_ACTIVATOR),
-                            m_bundles.size(),
-                            sym,
-                            m_bundles, desc.getClassLoader(), bundleConfig);
-                    if (sym != null)
-                    {
-                        m_symbolicNameToBundle.put(bundle.getSymbolicName(),
-                                bundle);
-                    }
+                    sym = sym.substring(0, idx);
                 }
-
+				sym = sym.trim();
             }
 
-
-        for (long i = 1; i < m_bundles.size(); i++)
-        {
-            try
+            if (sym != null && !m_symbolicNameToBundle.containsKey( sym ))
             {
-                m_bundles.get(i).start();
-            }
-            catch (Throwable e)
-            {
-                System.out.println("Unable to start bundle: " + i);
-                e.printStackTrace();
+                // TODO: framework - support multiple versions
+                Bundle bundle = new PojoSRBundle(r, bundleHeaders,
+                        osgiVersion, desc.getUrl().toExternalForm(), m_reg,
+                        m_dispatcher,
+                        bundleHeaders.get(Constants.BUNDLE_ACTIVATOR),
+                        m_bundles.size(),
+                        sym,
+                        m_bundles, desc.getClassLoader(), bundleConfig);
+                if (sym != null)
+                {
+                    m_symbolicNameToBundle.put(bundle.getSymbolicName(), bundle);
+                }
             }
         }
 
+        for (long i = 1; i < m_bundles.size(); i++)
+        {
+        	Bundle b = null;
+            try
+            {
+                b = m_bundles.get(i);
+                System.out.println("Starting " + i + " "+b.getSymbolicName()+" - "+b);
+				b.start();
+            }
+            catch (Throwable e)
+            {
+                System.out.println("Unable to start bundle: " + i + " "+b.getSymbolicName());
+                e.printStackTrace();
+            }
+        }
 	}
 
     public static void main(String[] args) throws Exception
@@ -432,8 +433,7 @@ public class PojoSR implements PojoServiceRegistry
 	    	}
     	}
         Map<String,Object> config = new HashMap<>();
-        config.put(
-                PojoServiceRegistryFactory.BUNDLE_DESCRIPTORS,
+        config.put(PojoServiceRegistryFactory.BUNDLE_DESCRIPTORS,
                 (filter != null) ? new ClasspathScanner()
                         .scanForBundles(filter.toString()) : new ClasspathScanner()
                         .scanForBundles());
@@ -460,8 +460,7 @@ public class PojoSR implements PojoServiceRegistry
         return m_context;
     }
 
-    public void addServiceListener(ServiceListener listener, String filter)
-            throws InvalidSyntaxException
+    public void addServiceListener(ServiceListener listener, String filter) throws InvalidSyntaxException
     {
         m_context.addServiceListener(listener, filter);
     }
@@ -476,20 +475,17 @@ public class PojoSR implements PojoServiceRegistry
         m_context.removeServiceListener(listener);
     }
 
-    public ServiceRegistration<?> registerService(String[] clazzes,
-            Object service, Dictionary<String, ?> properties)
+    public ServiceRegistration<?> registerService(String[] clazzes, Object service, Dictionary<String, ?> properties)
     {
         return m_context.registerService(clazzes, service, properties);
     }
 
-    public ServiceRegistration<?> registerService(String clazz, Object service,
-            Dictionary<String, ?> properties)
+    public ServiceRegistration<?> registerService(String clazz, Object service, Dictionary<String, ?> properties)
     {
         return m_context.registerService(clazz, service, properties);
     }
 
-    public ServiceReference<?>[] getServiceReferences(String clazz, String filter)
-            throws InvalidSyntaxException
+    public ServiceReference<?>[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException
     {
         return m_context.getServiceReferences(clazz, filter);
     }

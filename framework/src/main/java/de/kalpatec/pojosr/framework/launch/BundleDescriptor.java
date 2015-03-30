@@ -24,12 +24,11 @@ public class BundleDescriptor
     private final URL m_url;
     private final Map<String, String> m_headers;
 
-    public BundleDescriptor(ClassLoader loader, URL url,
-            Map<String, String> headers)
+    public BundleDescriptor(ClassLoader loader, URL url, Map<String, String> manifestHeaders)
     {
         m_loader = loader;
         m_url = url;
-        m_headers = headers;
+        m_headers = manifestHeaders;
     }
 
     public ClassLoader getClassLoader()
@@ -47,7 +46,7 @@ public class BundleDescriptor
         return m_url.toExternalForm();
     }
 
-    public Map<String, String> getHeaders()
+    public Map<String, String> getManifestHeaders()
     {
         return m_headers;
     }

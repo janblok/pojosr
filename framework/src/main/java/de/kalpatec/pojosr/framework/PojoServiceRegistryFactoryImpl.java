@@ -42,11 +42,9 @@ import de.kalpatec.pojosr.framework.launch.ClasspathScanner;
 import de.kalpatec.pojosr.framework.launch.PojoServiceRegistry;
 import de.kalpatec.pojosr.framework.launch.PojoServiceRegistryFactory;
 
-public class PojoServiceRegistryFactoryImpl implements
-		PojoServiceRegistryFactory, FrameworkFactory {
+public class PojoServiceRegistryFactoryImpl implements PojoServiceRegistryFactory, FrameworkFactory {
 
-	public PojoServiceRegistry newPojoServiceRegistry(Map<String, Object> configuration)
-			throws Exception {
+	public PojoServiceRegistry newPojoServiceRegistry(Map<String, Object> configuration) throws Exception {
 		return new PojoSR(configuration);
 	}
 
@@ -65,10 +63,9 @@ public class PojoServiceRegistryFactoryImpl implements
 
 		public void init() throws BundleException {
 			try {
-				m_reg = new PojoServiceRegistryFactoryImpl()
-				.newPojoServiceRegistry(new HashMap<String,Object>());
-				m_bundle = m_reg.getBundleContext()
-						.getBundle();
+				HashMap<String, Object> configuration = new HashMap<String,Object>();
+				m_reg = new PojoServiceRegistryFactoryImpl().newPojoServiceRegistry(configuration);
+				m_bundle = m_reg.getBundleContext().getBundle();
 			} catch (Exception ex) {
 				throw new BundleException("Unable to scan classpath", ex);
 			}

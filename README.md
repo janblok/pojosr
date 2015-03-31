@@ -16,10 +16,16 @@ Finally, this is not intended to be a replacement for OSGi but rather as a way t
 
 Please contribute with pull requests! 
 
+Usage
+========
+
+See the *framework* module readme for details.
+
+
 Examples
 ========
 
-See the example module for a project wich produces a working war with PojoSR and Felix Webconsole inside.
+See the *example* module readme for details, it produces a working war using PojoSR and showing Felix Webconsole.
 
 
 What's not supported

@@ -13,7 +13,7 @@ Startup
 Run with:  
 mvn jetty:run
 
-Open a browser to:
+Open a browser to:  
 http://localhost:8080/system/console/  
 
 For login credentials default values see:  

@@ -15,6 +15,7 @@ mvn jetty:run
 
 Open a browser to:
 http://localhost:8080/system/console/
+
 For login credentials default values see:
 http://felix.apache.org/documentation/subprojects/apache-felix-web-console.html
 

@@ -54,7 +54,7 @@ import de.kalpatec.pojosr.framework.launch.ClasspathScanner;
 import de.kalpatec.pojosr.framework.launch.PojoServiceRegistry;
 import de.kalpatec.pojosr.framework.launch.PojoServiceRegistryFactory;
 
-class PojoSR implements PojoServiceRegistry
+public class PojoSR implements PojoServiceRegistry
 {
     private final BundleContext m_context;
     private final ServiceRegistry m_reg = new ServiceRegistry(

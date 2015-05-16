@@ -51,8 +51,7 @@ class PojoSRBundleContext implements BundleContext
     private final EventDispatcher m_dispatcher;
     private final ServiceRegistry m_reg;
 
-    public PojoSRBundleContext(Bundle bundle, ServiceRegistry reg,
-            EventDispatcher dispatcher, Map<Long, Bundle> bundles, Map<String,?> config)
+    public PojoSRBundleContext(Bundle bundle, ServiceRegistry reg, EventDispatcher dispatcher, Map<Long, Bundle> bundles, Map<String,?> config)
     {
         m_bundle = bundle;
         m_reg = reg;
@@ -63,14 +62,12 @@ class PojoSRBundleContext implements BundleContext
 
     public void addBundleListener(BundleListener listener)
     {
-        m_dispatcher
-                .addListener(this, BundleListener.class, listener, null);
+        m_dispatcher.addListener(this, BundleListener.class, listener, null);
     }
 
     public void addFrameworkListener(FrameworkListener listener)
     {
-        m_dispatcher.addListener(this, FrameworkListener.class, listener,
-                null);
+        m_dispatcher.addListener(this, FrameworkListener.class, listener, null);
     }
 
     public void addServiceListener(ServiceListener listener)
@@ -81,16 +78,13 @@ class PojoSRBundleContext implements BundleContext
         }
         catch (InvalidSyntaxException e)
         {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
 
-    public void addServiceListener(final ServiceListener listener, String filter)
-            throws InvalidSyntaxException
+    public void addServiceListener(final ServiceListener listener, String filter) throws InvalidSyntaxException
     {
-		 m_dispatcher.addListener(this, ServiceListener.class, listener,
-                filter == null ? null : FrameworkUtil.createFilter(filter));
+		 m_dispatcher.addListener(this, ServiceListener.class, listener, filter == null ? null : FrameworkUtil.createFilter(filter));
     }
 
     public Filter createFilter(String filter) throws InvalidSyntaxException
@@ -98,8 +92,7 @@ class PojoSRBundleContext implements BundleContext
         return FrameworkUtil.createFilter(filter);
     }
 
-    public ServiceReference<?>[] getAllServiceReferences(String clazz,
-            String filter) throws InvalidSyntaxException
+    public ServiceReference<?>[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException
     {
         SimpleFilter simple = null;
         if (filter != null)
@@ -113,10 +106,8 @@ class PojoSRBundleContext implements BundleContext
                 throw new InvalidSyntaxException(ex.getMessage(), filter);
             }
         }
-        List<?> result = m_reg.getServiceReferences(clazz,
-                simple);
-        return result.isEmpty() ? null : result
-                .toArray(new ServiceReference[result.size()]);
+        List<?> result = m_reg.getServiceReferences(clazz, simple);
+        return result.isEmpty() ? null : result.toArray(new ServiceReference[result.size()]);
     }
 
     private ServiceReference<?> getBestServiceReference(ServiceReference<?>[] refs)
@@ -141,7 +132,6 @@ class PojoSRBundleContext implements BundleContext
                 bestRef = refs[i];
             }
         }
-
         return bestRef;
     }
 
@@ -169,11 +159,9 @@ class PojoSRBundleContext implements BundleContext
 
     public Bundle[] getBundles()
     {
-        Bundle[] result = m_bundles.values().toArray(
-                new Bundle[m_bundles.size()]);
+        Bundle[] result = m_bundles.values().toArray(new Bundle[m_bundles.size()]);
         Arrays.sort(result, new Comparator<Bundle>()
         {
-
             public int compare(Bundle o1, Bundle o2)
             {
                 return (int) (o1.getBundleId() - o2.getBundleId());
@@ -196,20 +184,19 @@ class PojoSRBundleContext implements BundleContext
     public String getProperty(String key)
     {
         Object result = m_config.get(key);
-
         return result == null ? System.getProperty(key) : result.toString();
     }
 
     public <S> S getService(ServiceReference<S> reference)
     {
+        if (reference == null) throw new NullPointerException("A null service reference is not allowed.");
         return m_reg.getService(m_bundle, reference);
     }
 
 
     @Override
     public <S> ServiceObjects<S> getServiceObjects(ServiceReference<S> reference) {
-        if (reference == null)
-            throw new NullPointerException("A null service reference is not allowed.");
+        if (reference == null) throw new NullPointerException("A null service reference is not allowed.");
         ServiceObjects<S> serviceObjects = m_reg.getServiceObjects(this, reference);
         return serviceObjects;
     }
@@ -231,8 +218,7 @@ class PojoSRBundleContext implements BundleContext
         }
     }
 
-    public <S> Collection<ServiceReference<S>> getServiceReferences(Class<S> clazz, String filter)
-                    throws InvalidSyntaxException
+    public <S> Collection<ServiceReference<S>> getServiceReferences(Class<S> clazz, String filter) throws InvalidSyntaxException
     {
         ServiceReference<S>[] refs = (ServiceReference<S>[]) getServiceReferences(clazz.getName(), filter);
         if (refs == null)
@@ -242,19 +228,17 @@ class PojoSRBundleContext implements BundleContext
         return Arrays.asList(refs);
     }
 
-    public ServiceReference<?>[] getServiceReferences(String clazz, String filter)
-            throws InvalidSyntaxException
+    public ServiceReference<?>[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException
     {
         return getAllServiceReferences(clazz, filter);
     }
 
-     public Bundle installBundle(String location) throws BundleException
+    public Bundle installBundle(String location) throws BundleException
     {
         throw new BundleException("pojosr can't do that");
     }
 
-    public Bundle installBundle(String location, InputStream input)
-            throws BundleException
+    public Bundle installBundle(String location, InputStream input) throws BundleException
     {
         throw new BundleException("pojosr can't do that");
     }
@@ -264,23 +248,17 @@ class PojoSRBundleContext implements BundleContext
         return (ServiceRegistration<S>) registerService(clazz.getName(), service, properties);
     }
 
-    public <S> ServiceRegistration<S> registerService(Class<S> clazz,
-            ServiceFactory<S> factory, Dictionary<String, ?> properties) {
+    public <S> ServiceRegistration<S> registerService(Class<S> clazz, ServiceFactory<S> factory, Dictionary<String, ?> properties) {
         
-        ServiceRegistration<S> registration = (ServiceRegistration<S>) registerService(clazz.getName(), factory, properties);
-        return registration;
-
+        return (ServiceRegistration<S>) registerService(clazz.getName(), factory, properties);
     }
 
-    public ServiceRegistration<?> registerService(String clazz, Object service,
-            Dictionary<String,?> properties)
+    public ServiceRegistration<?> registerService(String clazz, Object service, Dictionary<String,?> properties)
     {
-        return m_reg.registerService(m_bundle, new String[] { clazz }, service,
-                properties);
+        return m_reg.registerService(m_bundle, new String[] { clazz }, service, properties);
     }
 
-    public ServiceRegistration<?> registerService(String[] clazzes,
-            Object service, Dictionary<String, ?> properties)
+    public ServiceRegistration<?> registerService(String[] clazzes, Object service, Dictionary<String, ?> properties)
     {
         return m_reg.registerService(m_bundle, clazzes, service, properties);
     }
@@ -292,14 +270,12 @@ class PojoSRBundleContext implements BundleContext
 
     public void removeFrameworkListener(FrameworkListener listener)
     {
-        m_dispatcher
-                .removeListener(this, FrameworkListener.class, listener);
+        m_dispatcher.removeListener(this, FrameworkListener.class, listener);
     }
 
     public void removeServiceListener(ServiceListener listener)
     {
-        m_dispatcher.removeListener(this, ServiceListener.class,
-                    listener);
+        m_dispatcher.removeListener(this, ServiceListener.class, listener);
     }
 
     public boolean ungetService(ServiceReference<?> reference)

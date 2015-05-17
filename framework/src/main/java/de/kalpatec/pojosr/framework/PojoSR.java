@@ -20,12 +20,15 @@ import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 import java.util.jar.Attributes;
 
 import org.osgi.framework.Bundle;
@@ -399,25 +402,125 @@ public class PojoSR implements PojoServiceRegistry
                 }
             }
         }
+		resolveBundles();
+        startBundles();
+        //after start clean these 4 maps?
+	}
 
-        for (long i = 1; i < m_bundles.size(); i++)
+	private Map<String,Bundle> exportedPackages = new HashMap<>();
+	private Map<String,Bundle> importedPackages = new HashMap<>();
+	private Map<String,Bundle> requiredBundleNameFromBundle = new HashMap<>();
+	private Map<Bundle,List<Bundle>> dependencies = new HashMap<>();
+	
+	//puts bundles back in installed state if missing dependencies, and build dependency list for startBundle
+	private void resolveBundles() {
+		for (long i = 1; i < m_bundles.size(); i++)
         {
-        	Bundle b = null;
-            try
-            {
-                b = m_bundles.get(i);
-                System.out.println("Starting " + i + " "+b.getSymbolicName()+" - "+b);
-				b.start();
-            }
-            catch (Throwable e)
-            {
-                System.out.println("Unable to start bundle: " + i + " "+b.getSymbolicName());
-                e.printStackTrace();
-            }
+        	Bundle b = m_bundles.get(i);
+            extractDependenciesAndCapabilities(b);
+        }
+		resolveRequiredBundles();
+		matchImportedPackagesAgainstExportedPackages();
+	}
+
+	private void matchImportedPackagesAgainstExportedPackages() {
+		for (Entry<String, Bundle> elem : importedPackages.entrySet()) {
+			String packageName = elem.getKey();
+			if (SystemClasses.containsPackage(packageName)) continue;//ignore RT.jar stuff
+			PojoSRBundle bundle = (PojoSRBundle) elem.getValue();
+			if (bundle.getState() != Bundle.RESOLVED) continue;
+			Bundle dependBundle = exportedPackages.get(packageName);
+			registerDependency(bundle, dependBundle, packageName);
+		}
+	}
+
+	private void resolveRequiredBundles() {
+		for (Entry<String, Bundle> elem : requiredBundleNameFromBundle.entrySet()) {
+			String requiredBundleName = elem.getKey();
+			PojoSRBundle bundle = (PojoSRBundle) elem.getValue();
+			if (bundle.getState() != Bundle.RESOLVED) continue;
+			Bundle dependBundle = m_symbolicNameToBundle.get(requiredBundleName);
+			registerDependency(bundle, dependBundle, requiredBundleName);
+		}
+	}
+
+	private void registerDependency(PojoSRBundle bundle, Bundle dependBundle, String requirementName) {
+		if (dependBundle == null)
+		{
+			bundle.setState(Bundle.INSTALLED);
+			System.out.println("Unable to resolve depencies for bundle: "+bundle+" missing requirement: "+requirementName);
+		}
+		else if (!bundle.equals(dependBundle))
+		{
+			List<Bundle> deps = dependencies.get(bundle);
+			if (deps == null) {
+				deps = new ArrayList<>();
+				dependencies.put(bundle, deps);
+			}
+			deps.add(dependBundle);
+		}
+	}
+	
+	private void extractDependenciesAndCapabilities(Bundle b) {
+		Dictionary<String, String> headers = b.getHeaders();
+		processCommaSeparatedList(b, headers.get(Constants.EXPORT_PACKAGE), exportedPackages);
+		processCommaSeparatedList(b, headers.get(Constants.IMPORT_PACKAGE), importedPackages);
+		processCommaSeparatedList(b, headers.get(Constants.REQUIRE_BUNDLE), requiredBundleNameFromBundle);
+		//TODO:check fragmenthost? as told on spec?
+	}
+
+	private void processCommaSeparatedList(Bundle b, String mfHeaderField, Map<String, Bundle> bundleMapping) {
+		if (mfHeaderField == null || mfHeaderField.trim().length() == 0) return;
+		
+		//we ignore version info, since we can't deal with it
+		mfHeaderField = mfHeaderField.replaceAll("version=\"[^\"]*\"", "");
+
+		String[] packageParts = mfHeaderField.split(",");
+		for (String part : packageParts) {
+			int idx  = part.indexOf(';');
+			if (idx > 0)
+			{
+				//we ignore version info, since we can't deal with it
+				String partOptions = part.substring(idx);
+				if (partOptions.contains("optionial")) continue;//ignore optional stuff
+				
+				part = part.substring(0,idx).trim();
+			}
+			bundleMapping.put(part,b);
+		}
+	}
+
+	private void startBundles() {
+		for (int i = 1; i < m_bundles.size(); i++)
+        {
+        	Bundle b = m_bundles.get(i);;
+            startBundle(b);
         }
 	}
 
-    public static void main(String[] args) throws Exception
+	private void startBundle(Bundle bundle) {
+		try
+		{
+			if (bundle.getState() == Bundle.RESOLVED)
+			{
+			    System.out.println("Starting bundle: "+bundle);
+			    List<Bundle> deps = dependencies.get(bundle);
+			    for (Bundle depBundle : deps) {
+			    	startBundle(depBundle);
+				}
+			    bundle.start();
+			}
+		}
+		catch (Throwable e)
+		{
+		    System.out.println("Unable to start bundle: "+bundle);
+		    Throwable cause = e.getCause();
+		    if (cause != null) e = cause;
+		    e.printStackTrace();
+		}
+	}
+
+	public static void main(String[] args) throws Exception
     {
     	Filter filter = null;
     	Class<?> main = null;

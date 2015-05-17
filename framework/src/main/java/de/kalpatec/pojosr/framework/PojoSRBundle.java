@@ -102,6 +102,11 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
         m_config = config;
     }
 
+    public void setState(int state)
+    {
+        m_state = state;
+    }
+    
     public int getState()
     {
         return m_state;

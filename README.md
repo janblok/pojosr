@@ -41,8 +41,8 @@ Dependencies are available from Maven Central:
 
 ```xml
 <dependency>
-	<groupId>com.spectray</groupId>
-	<artifactId>com.spectray.pojosr.framework</artifactId>
+	<groupId>com.spectray.pojosr</groupId>
+	<artifactId>framework</artifactId>
 	<version>0.4.0-SNAPSHOT</version>
 </dependency>
 ```

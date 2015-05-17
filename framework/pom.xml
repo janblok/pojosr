@@ -3,14 +3,12 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>com.spectray</groupId>
-		<artifactId>com.spectray.pojosr</artifactId>
+		<groupId>com.spectray.pojosr</groupId>
+		<artifactId>product</artifactId>
 		<version>0.4.0-SNAPSHOT</version>
 	</parent>
 	
-	<groupId>com.spectray</groupId>
-	<artifactId>com.spectray.pojosr.framework</artifactId>
-	<version>0.4.0-SNAPSHOT</version>
+	<artifactId>framework</artifactId>
 	
 	<name>Pojo Service Registry Framework</name>
 	<description>A service registry that enables OSGi style service registry programs without using an OSGi framework.</description>

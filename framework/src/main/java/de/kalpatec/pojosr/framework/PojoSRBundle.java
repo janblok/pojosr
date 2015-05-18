@@ -132,26 +132,21 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
         {
             m_state = Bundle.STARTING;
 
-            m_context = new PojoSRBundleContext(this, m_reg, m_dispatcher,
-                    m_bundles, m_config);
-            m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STARTING,
-                    this));
+            m_context = new PojoSRBundleContext(this, m_reg, m_dispatcher, m_bundles, m_config);
+            m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STARTING, this));
             if (m_activatorClass != null)
             {
-                m_activator = (BundleActivator) m_loader.loadClass(
-                        m_activatorClass).newInstance();
+                m_activator = (BundleActivator) m_loader.loadClass(m_activatorClass).newInstance();
                 m_activator.start(m_context);
             }
             m_state = Bundle.ACTIVE;
-            m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STARTED,
-                    this));
+            m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STARTED,this));
         }
         catch (Throwable ex)
         {
             m_state = Bundle.RESOLVED;
             m_activator = null;
-            m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STOPPED,
-                    this));
+            m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STOPPED, this));
             throw new BundleException("Unable to start bundle", ex);
         }
     }
@@ -175,8 +170,7 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
         try
         {
             m_state = Bundle.STOPPING;
-            m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STOPPING,
-                    this));
+            m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STOPPING, this));
             if (m_activator != null)
             {
                 m_activator.stop(m_context);
@@ -193,8 +187,7 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
             m_activator = null;
             m_context = null;
             m_state = Bundle.RESOLVED;
-            m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STOPPED,
-                    this));
+            m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STOPPED, this));
         }
     }
 
@@ -306,8 +299,7 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
 
             // Check to see if we actually need to localize anything
             boolean localize = false;
-            for (Iterator it = headers.values().iterator(); !localize
-                    && it.hasNext();)
+            for (Iterator it = headers.values().iterator(); !localize && it.hasNext();)
             {
                 if (((String) it.next()).startsWith("%"))
                 {
@@ -325,16 +317,14 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
             else
             {
                 // Do localization here and return the localized headers
-                String basename = (String) headers
-                        .get(Constants.BUNDLE_LOCALIZATION);
+                String basename = (String) headers.get(Constants.BUNDLE_LOCALIZATION);
                 if (basename == null)
                 {
                     basename = Constants.BUNDLE_LOCALIZATION_DEFAULT_BASENAME;
                 }
 
                 // Create ordered list of files to load properties from
-                List resourceList = createLocalizationResourceList(basename,
-                        locale);
+                List resourceList = createLocalizationResourceList(basename, locale);
 
                 // Create a merged props file with all available props for this
                 // locale
@@ -348,8 +338,7 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
                         found = true;
                         try
                         {
-                            mergedProperties.load(temp.openConnection()
-                                    .getInputStream());
+                            mergedProperties.load(temp.openConnection().getInputStream());
                         }
                         catch (IOException ex)
                         {
@@ -363,24 +352,21 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
                 // return the default localization.
                 if (!found && !locale.equals(Locale.getDefault().toString()))
                 {
-                    result = getCurrentLocalizedHeader(Locale.getDefault()
-                            .toString());
+                    result = getCurrentLocalizedHeader(Locale.getDefault().toString());
                 }
                 // Otherwise, perform the localization based on the discovered
                 // properties and cache the result.
                 else
                 {
                     // Resolve all localized header entries
-                    for (Iterator it = headers.entrySet().iterator(); it
-                            .hasNext();)
+                    for (Iterator it = headers.entrySet().iterator(); it.hasNext();)
                     {
                         Map.Entry entry = (Map.Entry) it.next();
                         String value = (String) entry.getValue();
                         if (value.startsWith("%"))
                         {
                             String newvalue;
-                            String key = value
-                                    .substring(value.indexOf("%") + 1);
+                            String key = value.substring(value.indexOf("%") + 1);
                             newvalue = mergedProperties.getProperty(key);
                             if (newvalue == null)
                             {
@@ -410,8 +396,7 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
     private final Map m_cachedHeaders = new HashMap();
     private long m_cachedHeadersTimestamp;
 
-    private static List createLocalizationResourceList(String basename,
-            String locale)
+    private static List createLocalizationResourceList(String basename, String locale)
     {
         List result = new ArrayList(4);
 

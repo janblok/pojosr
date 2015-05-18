@@ -6,9 +6,9 @@ import java.io.FileReader;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SystemClasses {
+public class SystemPackages {
 
-    private static Set<String> CS = new HashSet<String>();
+    private static final Set<String> CS = new HashSet<String>();
 
     static {
         try {
@@ -18,7 +18,7 @@ public class SystemClasses {
             while ((line = r.readLine()) != null) {
             	//we are only intrested in packages...not classnames
             	int idx = line.lastIndexOf('/');
-            	if (idx > 0) line = line.substring(idx);
+            	if (idx > 0) line = line.substring(0,idx);
             	
             	CS.add(line.replace('/', '.'));
             }
@@ -27,15 +27,19 @@ public class SystemClasses {
         }
     }
 
+    public static void addExtraPackage(String packageName)
+    {
+    	CS.add(packageName);
+    }
+    
     public static boolean containsPackage(String o) {
         return CS.contains(o) || o.startsWith("java") || o.startsWith("com.sun")
-                || o.startsWith("sun") || o.startsWith("oracle")
-                || o.startsWith("org.xml") || o.startsWith("org.w3c.dom") 
+                || o.startsWith("sun") || o.startsWith("oracle") || o.startsWith("com.oracle")
+                || o.startsWith("org.xml") || o.startsWith("org.w3c.dom") || o.startsWith("javax.xml")
                 || o.startsWith("javax.security") || o.startsWith("javax.sound") || o.startsWith("javax.swing") 
-                || o.startsWith("javax.accessibility") || o.startsWith("com.oracle");
+                || o.startsWith("javax.accessibility") || o.startsWith("javax.naming") || o.startsWith("javax.imageio");
     }
 
-    private SystemClasses() {
-    }
+    private SystemPackages() {}
 }
 

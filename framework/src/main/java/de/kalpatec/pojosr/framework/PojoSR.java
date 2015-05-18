@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -59,7 +60,7 @@ import de.kalpatec.pojosr.framework.launch.PojoServiceRegistryFactory;
 
 public class PojoSR implements PojoServiceRegistry
 {
-    private final BundleContext m_context;
+	private final BundleContext m_context;
     private final ServiceRegistry m_reg = new ServiceRegistry(
             new ServiceRegistry.ServiceRegistryCallbacks()
             {
@@ -79,12 +80,24 @@ public class PojoSR implements PojoServiceRegistry
         Bundle b = createPojoSRFrameworkBundle();
         m_context = b.getBundleContext();
 
+        handleFramewoekSystemPackagesExtra(config, b);
+        
         List<BundleDescriptor> scan = (List<BundleDescriptor>) config.get(PojoServiceRegistryFactory.BUNDLE_DESCRIPTORS);
         if (scan != null)
         {
             startBundles(scan);
 		}
     }
+
+	private void handleFramewoekSystemPackagesExtra(Map<String, Object> config, Bundle b) {
+		Map<String,Bundle> extraPacakgesMap = new HashMap<>();
+        String extraPacakges = (String) config.get(Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA);
+        processCommaSeparatedList(b, extraPacakges, extraPacakgesMap);
+        Set<String> extraPacakgesSet = extraPacakgesMap.keySet();
+        for (String packageName : extraPacakgesSet) {
+        	SystemPackages.addExtraPackage(packageName);
+		}
+	}
 
 	private Bundle createPojoSRFrameworkBundle() throws BundleException 
 	{
@@ -159,7 +172,7 @@ public class PojoSR implements PojoServiceRegistry
             @Override
             public synchronized void stop() throws BundleException
             {
-            	if ((m_state == Bundle.STOPPING) || m_state == Bundle.RESOLVED) {
+            	if ((m_state == Bundle.STOPPING) || m_state == Bundle.RESOLVED || m_state == Bundle.INSTALLED) {
             		return;
 
             	}
@@ -170,8 +183,7 @@ public class PojoSR implements PojoServiceRegistry
             	Runnable r = new Runnable() {
 
 					public void run() {
-		                m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STOPPING,
-		                		systemBundle));
+		                m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STOPPING, systemBundle));
 		                for (Bundle b : m_bundles.values())
 		                {
 		                    try
@@ -193,7 +205,7 @@ public class PojoSR implements PojoServiceRegistry
 					}
 				};
 				m_state = Bundle.STOPPING;
-				if ("true".equalsIgnoreCase(System.getProperty("de.kalpatec.pojosr.framework.events.sync"))) {
+				if (Boolean.getBoolean(PojoServiceRegistryFactory.FRAMEWORK_EVENTS_SYNC) || Boolean.valueOf((String)bundleConfig.get(PojoServiceRegistryFactory.FRAMEWORK_EVENTS_SYNC))) {
 					r.run();
 				}
 				else {
@@ -340,8 +352,7 @@ public class PojoSR implements PojoServiceRegistry
             Revision r;
             if (u.toExternalForm().startsWith("file:"))
             {
-                File root = new File(URLDecoder.decode(desc.getUrl()
-                        .getFile(), "UTF-8"));
+                File root = new File(URLDecoder.decode(desc.getUrl().getFile(), "UTF-8"));
                 u = root.toURL();
                 r = new DirRevision(root);
             }
@@ -398,19 +409,25 @@ public class PojoSR implements PojoServiceRegistry
                         m_bundles, desc.getClassLoader(), bundleConfig);
                 if (sym != null)
                 {
+                	System.out.println("Found bundle "+bundle);
                     m_symbolicNameToBundle.put(bundle.getSymbolicName(), bundle);
                 }
             }
         }
 		resolveBundles();
         startBundles();
-        //after start clean these 4 maps?
+        
+        //clean
+        exportedPackages = null;
+        importedPackages = null;
+        requiredBundleNameFromBundle = null;
+        dependencies = null;
 	}
 
 	private Map<String,Bundle> exportedPackages = new HashMap<>();
 	private Map<String,Bundle> importedPackages = new HashMap<>();
 	private Map<String,Bundle> requiredBundleNameFromBundle = new HashMap<>();
-	private Map<Bundle,List<Bundle>> dependencies = new HashMap<>();
+	private Map<Bundle,Set<Bundle>> dependencies = new HashMap<>();
 	
 	//puts bundles back in installed state if missing dependencies, and build dependency list for startBundle
 	private void resolveBundles() {
@@ -426,7 +443,7 @@ public class PojoSR implements PojoServiceRegistry
 	private void matchImportedPackagesAgainstExportedPackages() {
 		for (Entry<String, Bundle> elem : importedPackages.entrySet()) {
 			String packageName = elem.getKey();
-			if (SystemClasses.containsPackage(packageName)) continue;//ignore RT.jar stuff
+			if (SystemPackages.containsPackage(packageName)) continue;//ignore RT.jar stuff
 			PojoSRBundle bundle = (PojoSRBundle) elem.getValue();
 			if (bundle.getState() != Bundle.RESOLVED) continue;
 			Bundle dependBundle = exportedPackages.get(packageName);
@@ -445,16 +462,20 @@ public class PojoSR implements PojoServiceRegistry
 	}
 
 	private void registerDependency(PojoSRBundle bundle, Bundle dependBundle, String requirementName) {
+		
 		if (dependBundle == null)
 		{
-			bundle.setState(Bundle.INSTALLED);
+			if (Boolean.valueOf((String)bundleConfig.get(Constants.SUPPORTS_FRAMEWORK_REQUIREBUNDLE)))
+			{
+				bundle.setState(Bundle.INSTALLED);
+			}
 			System.out.println("Unable to resolve depencies for bundle: "+bundle+" missing requirement: "+requirementName);
 		}
 		else if (!bundle.equals(dependBundle))
 		{
-			List<Bundle> deps = dependencies.get(bundle);
+			Set<Bundle> deps = dependencies.get(bundle);
 			if (deps == null) {
-				deps = new ArrayList<>();
+				deps = new HashSet<>();
 				dependencies.put(bundle, deps);
 			}
 			deps.add(dependBundle);
@@ -484,40 +505,50 @@ public class PojoSR implements PojoServiceRegistry
 				String partOptions = part.substring(idx);
 				if (partOptions.contains("optionial")) continue;//ignore optional stuff
 				
-				part = part.substring(0,idx).trim();
+				part = part.substring(0,idx);
 			}
+			part = part.trim();
 			bundleMapping.put(part,b);
 		}
 	}
 
 	private void startBundles() {
-		for (int i = 1; i < m_bundles.size(); i++)
+		for (long i = 1; i < m_bundles.size(); i++)
         {
-        	Bundle b = m_bundles.get(i);;
-            startBundle(b);
+        	Bundle b = m_bundles.get(i);
+        	try
+        	{
+	            startBundle(b);
+	        }
+			catch (Throwable e)
+			{
+			    System.out.println("Unable to start bundle: "+b+" with reason: "+e.getMessage());
+			    Throwable cause = e.getCause();
+			    if (cause != null) 
+			    {
+			    	cause.printStackTrace();
+			    }
+			}
         }
 	}
 
-	private void startBundle(Bundle bundle) {
-		try
+	private void startBundle(Bundle bundle) throws BundleException {
+		if (bundle.getState() == Bundle.STARTING || bundle.getState() == Bundle.ACTIVE) return;
+		else if (bundle.getState() == Bundle.RESOLVED)
 		{
-			if (bundle.getState() == Bundle.RESOLVED)
-			{
-			    System.out.println("Starting bundle: "+bundle);
-			    List<Bundle> deps = dependencies.get(bundle);
+			//start dependend bundles first
+		    Set<Bundle> deps = dependencies.get(bundle);
+		    if (deps != null)
+		    {
 			    for (Bundle depBundle : deps) {
 			    	startBundle(depBundle);
 				}
-			    bundle.start();
-			}
+		    }
+
+		    System.out.println("Starting bundle: "+bundle);
+		    bundle.start();
 		}
-		catch (Throwable e)
-		{
-		    System.out.println("Unable to start bundle: "+bundle);
-		    Throwable cause = e.getCause();
-		    if (cause != null) e = cause;
-		    e.printStackTrace();
-		}
+		else throw new IllegalStateException("Cannot start unresolved bundle: "+bundle);
 	}
 
 	public static void main(String[] args) throws Exception

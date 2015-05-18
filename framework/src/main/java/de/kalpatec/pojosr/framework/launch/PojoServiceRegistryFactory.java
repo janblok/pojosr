@@ -19,9 +19,18 @@ import java.util.Map;
 
 public interface PojoServiceRegistryFactory 
 {
-    public static final String BUNDLE_DESCRIPTORS = PojoServiceRegistry.class
-            .getName().toLowerCase() + ".bundles";
+	public static final String FRAMEWORK_EVENTS_SYNC = "de.kalpatec.pojosr.framework.events.sync";
+    public static final String BUNDLE_DESCRIPTORS = PojoServiceRegistry.class.getName().toLowerCase() + ".bundles";
 
-    public PojoServiceRegistry newPojoServiceRegistry(Map<String,Object> configuration)
-            throws Exception;
+    /**
+     * Options are:
+     * Pass BUNDLE_DESCRIPTORS with a List of BundleDescriptor retrieved from classpath scanners or leave empty to have PojoSR so this
+     * When in the configuration Constants.SUPPORTS_FRAMEWORK_REQUIREBUNDLE=false is used, all bundle checks are disabled
+     * For synchronized loading pass FRAMEWORK_EVENTS_SYNC=true (or use as system property)
+     * 
+     * @param configuration
+     * @return the instance
+     * @throws Exception
+     */
+    public PojoServiceRegistry newPojoServiceRegistry(Map<String,Object> configuration) throws Exception;
 }

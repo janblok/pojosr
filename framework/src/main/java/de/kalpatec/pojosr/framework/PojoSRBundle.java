@@ -166,7 +166,7 @@ class PojoSRBundle implements Bundle, BundleRevisions, BundleRevision
     {
         if (m_state != Bundle.ACTIVE)
         {
-            if (m_state == Bundle.RESOLVED)
+            if (m_state == Bundle.RESOLVED || m_state == Bundle.INSTALLED)
             {
                 return;
             }

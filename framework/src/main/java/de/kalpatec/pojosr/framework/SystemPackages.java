@@ -33,11 +33,10 @@ public class SystemPackages {
     }
     
     public static boolean containsPackage(String o) {
-        return CS.contains(o) || o.startsWith("java") || o.startsWith("com.sun")
-                || o.startsWith("sun") || o.startsWith("oracle") || o.startsWith("com.oracle")
-                || o.startsWith("org.xml") || o.startsWith("org.w3c.dom") || o.startsWith("javax.xml")
-                || o.startsWith("javax.security") || o.startsWith("javax.sound") || o.startsWith("javax.swing") 
-                || o.startsWith("javax.accessibility") || o.startsWith("javax.naming") || o.startsWith("javax.imageio");
+        return CS.contains(o) || o.startsWith("java") || o.startsWith("javax")
+        		|| o.startsWith("com.sun") || o.startsWith("sun") 
+        		|| o.startsWith("oracle") || o.startsWith("com.oracle")
+                || o.startsWith("org.xml") || o.startsWith("org.w3c.dom") || o.startsWith("org.omg");
     }
 
     private SystemPackages() {}

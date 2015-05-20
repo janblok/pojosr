@@ -503,7 +503,7 @@ public class PojoSR implements PojoServiceRegistry
 			{
 				//we ignore version info, since we can't deal with it
 				String partOptions = part.substring(idx);
-				if (partOptions.contains("optionial")) continue;//ignore optional stuff
+				if (partOptions.contains("optional")) continue;//ignore optional stuff
 				
 				part = part.substring(0,idx);
 			}

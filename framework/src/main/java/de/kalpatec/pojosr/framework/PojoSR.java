@@ -21,6 +21,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -513,26 +515,42 @@ public class PojoSR implements PojoServiceRegistry
 	}
 
 	private void startBundles() {
+		//start bundles without dependencies
 		for (long i = 1; i < m_bundles.size(); i++)
         {
         	Bundle b = m_bundles.get(i);
-        	try
-        	{
-	            startBundle(b);
-	        }
-			catch (Throwable e)
-			{
-			    System.out.println("Unable to start bundle: "+b+" with reason: "+e.getMessage());
-			    Throwable cause = e.getCause();
-			    if (cause != null) 
-			    {
-			    	cause.printStackTrace();
-			    }
-			}
+        	if (!dependencies.containsKey(b)) startBundle(b);
         }
+		
+		//start bundles with least dependencies first
+		List<Map.Entry<Bundle, Set<Bundle>>> sortedList = new ArrayList<>(dependencies.entrySet());
+		Collections.sort(sortedList, new Comparator <Map.Entry<Bundle, Set<Bundle>>>() {
+		  public int compare(Map.Entry<Bundle, Set<Bundle>> a, Map.Entry<Bundle, Set<Bundle>> b){
+		    return a.getValue().size() - b.getValue().size();
+		  }
+		});
+		for (Map.Entry<Bundle, Set<Bundle>> item : sortedList) {
+			startBundle(item.getKey());
+		}
 	}
 
-	private void startBundle(Bundle bundle) throws BundleException {
+	private void startBundle(Bundle b) {
+		try
+		{
+		    startBundleWithDependencies(b);
+		}
+		catch (Throwable e)
+		{
+		    System.out.println("Unable to start bundle: "+b+" with reason: "+e.getMessage());
+		    Throwable cause = e.getCause();
+		    if (cause != null) 
+		    {
+		    	cause.printStackTrace();
+		    }
+		}
+	}
+
+	private void startBundleWithDependencies(Bundle bundle) throws BundleException {
 		if (bundle.getState() == Bundle.STARTING || bundle.getState() == Bundle.ACTIVE) return;
 		else if (bundle.getState() == Bundle.RESOLVED)
 		{
@@ -541,7 +559,7 @@ public class PojoSR implements PojoServiceRegistry
 		    if (deps != null)
 		    {
 			    for (Bundle depBundle : deps) {
-			    	startBundle(depBundle);
+			    	startBundleWithDependencies(depBundle);
 				}
 		    }
 

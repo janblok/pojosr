@@ -541,7 +541,7 @@ public class PojoSR implements PojoServiceRegistry
 		}
 		catch (Throwable e)
 		{
-		    System.out.println("Unable to start bundle: "+b+" with reason: "+e.getMessage());
+		    System.out.println("Unable to start bundle: "+b+" with reason ("+e.getClass().getSimpleName()+"): "+e.getMessage());
 		    Throwable cause = e.getCause();
 		    if (cause != null) 
 		    {
@@ -554,17 +554,24 @@ public class PojoSR implements PojoServiceRegistry
 		if (bundle.getState() == Bundle.STARTING || bundle.getState() == Bundle.ACTIVE) return;
 		else if (bundle.getState() == Bundle.RESOLVED)
 		{
-			//start dependend bundles first
-		    Set<Bundle> deps = dependencies.get(bundle);
-		    if (deps != null)
-		    {
-			    for (Bundle depBundle : deps) {
-			    	startBundleWithDependencies(depBundle);
+			//remove to be to handle graphs loops
+			Set<Bundle> deps = dependencies.remove(bundle);
+		    try {
+		    	//start dependend bundles first
+				if (deps != null)
+				{
+				    for (Bundle depBundle : deps) {
+				    	startBundleWithDependencies(depBundle);
+					}
 				}
-		    }
 
-		    System.out.println("Starting bundle: "+bundle);
-		    bundle.start();
+				System.out.println("Starting bundle: "+bundle);
+				bundle.start();
+			} catch (Exception e) {
+				//restore tree incase of ex
+				dependencies.put(bundle,deps); 
+				throw e;
+			}
 		}
 		else throw new IllegalStateException("Cannot start unresolved bundle: "+bundle);
 	}

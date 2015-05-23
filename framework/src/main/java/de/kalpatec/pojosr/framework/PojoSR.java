@@ -82,7 +82,7 @@ public class PojoSR implements PojoServiceRegistry
         Bundle b = createPojoSRFrameworkBundle();
         m_context = b.getBundleContext();
 
-        handleFramewoekSystemPackagesExtra(config, b);
+        handleFrameworkSystemPackagesExtra(config, b);
         
         List<BundleDescriptor> scan = (List<BundleDescriptor>) config.get(PojoServiceRegistryFactory.BUNDLE_DESCRIPTORS);
         if (scan != null)
@@ -91,11 +91,11 @@ public class PojoSR implements PojoServiceRegistry
 		}
     }
 
-	private void handleFramewoekSystemPackagesExtra(Map<String, Object> config, Bundle b) {
-		Map<String,Bundle> extraPacakgesMap = new HashMap<>();
-        String extraPacakges = (String) config.get(Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA);
-        processCommaSeparatedList(b, extraPacakges, extraPacakgesMap);
-        Set<String> extraPacakgesSet = extraPacakgesMap.keySet();
+	private void handleFrameworkSystemPackagesExtra(Map<String, Object> config, Bundle b) {
+		Map<Bundle,Set<String>> extraPackagesMap = new HashMap<>();
+        String extraPackages = (String) config.get(Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA);
+        processCommaSeparatedList(b, extraPackages, extraPackagesMap);
+        Set<String> extraPacakgesSet = extraPackagesMap.get(b);
         for (String packageName : extraPacakgesSet) {
         	SystemPackages.addExtraPackage(packageName);
 		}
@@ -114,7 +114,6 @@ public class PojoSR implements PojoServiceRegistry
             @Override
             public long getLastModified()
             {
-                // TODO Auto-generated method stub
                 return System.currentTimeMillis();
             }
 
@@ -142,10 +141,8 @@ public class PojoSR implements PojoServiceRegistry
         		m_dispatcher.startDispatching();
         		m_state = Bundle.STARTING;
 
-                m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STARTING,
-                        this));
-                m_context = new PojoSRBundleContext(this, m_reg, m_dispatcher,
-                                m_bundles, bundleConfig);
+                m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STARTING, this));
+                m_context = new PojoSRBundleContext(this, m_reg, m_dispatcher, m_bundles, bundleConfig);
                 int i = 0;
                 for (Bundle b : m_bundles.values()) {
                 	i++;
@@ -164,8 +161,7 @@ public class PojoSR implements PojoServiceRegistry
                     }
                 }
                 m_state = Bundle.ACTIVE;
-                m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STARTED,
-                        this));
+                m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STARTED, this));
 
                 m_dispatcher.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.STARTED, this, null));
         		super.start();
@@ -176,7 +172,6 @@ public class PojoSR implements PojoServiceRegistry
             {
             	if ((m_state == Bundle.STOPPING) || m_state == Bundle.RESOLVED || m_state == Bundle.INSTALLED) {
             		return;
-
             	}
             	else if (m_state != Bundle.ACTIVE) {
             		throw new BundleException("Can't stop pojosr because it is not ACTIVE");
@@ -220,24 +215,20 @@ public class PojoSR implements PojoServiceRegistry
         b.getBundleContext().registerService(StartLevel.class.getName(),
                 new StartLevel()
                 {
-
                     public void setStartLevel(int startlevel)
                     {
                         // TODO Auto-generated method stub
-
                     }
 
                     public void setInitialBundleStartLevel(int startlevel)
                     {
                         // TODO Auto-generated method stub
-
                     }
 
                     public void setBundleStartLevel(Bundle bundle,
                             int startlevel)
                     {
                         // TODO Auto-generated method stub
-
                     }
 
                     public boolean isBundlePersistentlyStarted(Bundle bundle)
@@ -274,7 +265,6 @@ public class PojoSR implements PojoServiceRegistry
         b.getBundleContext().registerService(PackageAdmin.class.getName(),
                 new PackageAdmin()
                 {
-
                     public boolean resolveBundles(Bundle[] bundles)
                     {
                         // TODO Auto-generated method stub
@@ -323,8 +313,7 @@ public class PojoSR implements PojoServiceRegistry
                         return null;
                     }
 
-                    public Bundle[] getBundles(String symbolicName,
-                            String versionRange)
+                    public Bundle[] getBundles(String symbolicName, String versionRange)
                     {
 					    Bundle result = m_symbolicNameToBundle.get((symbolicName != null) ? symbolicName.trim() : symbolicName);
 						if (result != null) {
@@ -422,13 +411,13 @@ public class PojoSR implements PojoServiceRegistry
         //clean
         exportedPackages = null;
         importedPackages = null;
-        requiredBundleNameFromBundle = null;
+        requiredBundles = null;
         dependencies = null;
 	}
 
-	private Map<String,Bundle> exportedPackages = new HashMap<>();
-	private Map<String,Bundle> importedPackages = new HashMap<>();
-	private Map<String,Bundle> requiredBundleNameFromBundle = new HashMap<>();
+	private Map<Bundle,Set<String>> exportedPackages = new HashMap<>();
+	private Map<Bundle,Set<String>> importedPackages = new HashMap<>();
+	private Map<Bundle,Set<String>> requiredBundles = new HashMap<>();
 	private Map<Bundle,Set<Bundle>> dependencies = new HashMap<>();
 	
 	//puts bundles back in installed state if missing dependencies, and build dependency list for startBundle
@@ -443,23 +432,33 @@ public class PojoSR implements PojoServiceRegistry
 	}
 
 	private void matchImportedPackagesAgainstExportedPackages() {
-		for (Entry<String, Bundle> elem : importedPackages.entrySet()) {
-			String packageName = elem.getKey();
-			if (SystemPackages.containsPackage(packageName)) continue;//ignore RT.jar stuff
-			PojoSRBundle bundle = (PojoSRBundle) elem.getValue();
-			if (bundle.getState() != Bundle.RESOLVED) continue;
-			Bundle dependBundle = exportedPackages.get(packageName);
-			registerDependency(bundle, dependBundle, packageName);
+		for (Entry<Bundle, Set<String>> elem : importedPackages.entrySet()) {
+			Set<String> packageNames = elem.getValue();
+			for (String packageName : packageNames) {
+				if (SystemPackages.containsPackage(packageName)) continue;//ignore RT.jar stuff
+				PojoSRBundle bundle = (PojoSRBundle) elem.getKey();
+				if (bundle.getState() != Bundle.RESOLVED) continue;
+				Set<Entry<Bundle,Set<String>>> entrySet = exportedPackages.entrySet();
+				for (Entry<Bundle, Set<String>> entry : entrySet) {
+					Set<String> packages = entry.getValue();
+					if (packages.contains(packageName)){
+						Bundle dependBundle = entry.getKey();
+						registerDependency(bundle, dependBundle, packageName);
+					}
+				}
+			}
 		}
 	}
 
 	private void resolveRequiredBundles() {
-		for (Entry<String, Bundle> elem : requiredBundleNameFromBundle.entrySet()) {
-			String requiredBundleName = elem.getKey();
-			PojoSRBundle bundle = (PojoSRBundle) elem.getValue();
-			if (bundle.getState() != Bundle.RESOLVED) continue;
-			Bundle dependBundle = m_symbolicNameToBundle.get(requiredBundleName);
-			registerDependency(bundle, dependBundle, requiredBundleName);
+		for (Entry<Bundle, Set<String>> elem : requiredBundles.entrySet()) {
+			Set<String> requiredBundleNames = elem.getValue();
+			for (String requiredBundleName : requiredBundleNames) {
+				PojoSRBundle bundle = (PojoSRBundle) elem.getKey();
+				if (bundle.getState() != Bundle.RESOLVED) continue;
+				Bundle dependBundle = m_symbolicNameToBundle.get(requiredBundleName);
+				registerDependency(bundle, dependBundle, requiredBundleName);
+			}
 		}
 	}
 
@@ -488,11 +487,11 @@ public class PojoSR implements PojoServiceRegistry
 		Dictionary<String, String> headers = b.getHeaders();
 		processCommaSeparatedList(b, headers.get(Constants.EXPORT_PACKAGE), exportedPackages);
 		processCommaSeparatedList(b, headers.get(Constants.IMPORT_PACKAGE), importedPackages);
-		processCommaSeparatedList(b, headers.get(Constants.REQUIRE_BUNDLE), requiredBundleNameFromBundle);
+		processCommaSeparatedList(b, headers.get(Constants.REQUIRE_BUNDLE), requiredBundles);
 		//TODO:check fragmenthost? as told on spec?
 	}
 
-	private void processCommaSeparatedList(Bundle b, String mfHeaderField, Map<String, Bundle> bundleMapping) {
+	private void processCommaSeparatedList(Bundle b, String mfHeaderField, Map<Bundle, Set<String>> bundleMapping) {
 		if (mfHeaderField == null || mfHeaderField.trim().length() == 0) return;
 		
 		//we ignore version info, since we can't deal with it
@@ -510,11 +509,25 @@ public class PojoSR implements PojoServiceRegistry
 				part = part.substring(0,idx);
 			}
 			part = part.trim();
-			bundleMapping.put(part,b);
+			Set<String> foundParts = bundleMapping.get(b);
+			if (foundParts == null)
+			{
+				foundParts = new HashSet<String>();
+				bundleMapping.put(b,foundParts);
+			}
+			foundParts.add(part);
 		}
 	}
 
 	private void startBundles() {
+		//start logging or jndi first
+		for (long i = 1; i < m_bundles.size(); i++)
+        {
+        	Bundle b = m_bundles.get(i);
+        	String symbolicName = b.getSymbolicName();
+			if (symbolicName.contains("log") || symbolicName.contains("aries")) startBundle(b);
+        }
+		
 		//start bundles without dependencies
 		for (long i = 1; i < m_bundles.size(); i++)
         {
@@ -525,9 +538,9 @@ public class PojoSR implements PojoServiceRegistry
 		//start bundles with least dependencies first
 		List<Map.Entry<Bundle, Set<Bundle>>> sortedList = new ArrayList<>(dependencies.entrySet());
 		Collections.sort(sortedList, new Comparator <Map.Entry<Bundle, Set<Bundle>>>() {
-		  public int compare(Map.Entry<Bundle, Set<Bundle>> a, Map.Entry<Bundle, Set<Bundle>> b){
-		    return a.getValue().size() - b.getValue().size();
-		  }
+			public int compare(Map.Entry<Bundle, Set<Bundle>> a, Map.Entry<Bundle, Set<Bundle>> b){
+				return a.getValue().size() - b.getValue().size();
+			}
 		});
 		for (Map.Entry<Bundle, Set<Bundle>> item : sortedList) {
 			startBundle(item.getKey());
@@ -569,7 +582,7 @@ public class PojoSR implements PojoServiceRegistry
 				bundle.start();
 			} catch (Exception e) {
 				//restore tree incase of ex
-				dependencies.put(bundle,deps); 
+				if (deps != null) dependencies.put(bundle,deps); 
 				throw e;
 			}
 		}

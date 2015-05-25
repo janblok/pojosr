@@ -444,6 +444,7 @@ public class PojoSR implements PojoServiceRegistry
 					if (packages.contains(packageName)){
 						Bundle dependBundle = entry.getKey();
 						registerDependency(bundle, dependBundle, packageName);
+						break;
 					}
 				}
 			}
@@ -466,11 +467,11 @@ public class PojoSR implements PojoServiceRegistry
 		
 		if (dependBundle == null)
 		{
-			if (Boolean.valueOf((String)bundleConfig.get(Constants.SUPPORTS_FRAMEWORK_REQUIREBUNDLE)))
+			if (bundle.getState() != Bundle.INSTALLED)
 			{
-				bundle.setState(Bundle.INSTALLED);
+				if (Boolean.valueOf((String)bundleConfig.get(Constants.SUPPORTS_FRAMEWORK_REQUIREBUNDLE))) bundle.setState(Bundle.INSTALLED);
+				System.out.println("Unable to resolve depencies for bundle: "+bundle+" missing requirement: "+requirementName);
 			}
-			System.out.println("Unable to resolve depencies for bundle: "+bundle+" missing requirement: "+requirementName);
 		}
 		else if (!bundle.equals(dependBundle))
 		{
@@ -496,6 +497,7 @@ public class PojoSR implements PojoServiceRegistry
 		
 		//we ignore version info, since we can't deal with it
 		mfHeaderField = mfHeaderField.replaceAll("version=\"[^\"]*\"", "");
+		mfHeaderField = mfHeaderField.replaceAll("uses:=\"[^\"]*\"", "");
 
 		String[] packageParts = mfHeaderField.split(",");
 		for (String part : packageParts) {

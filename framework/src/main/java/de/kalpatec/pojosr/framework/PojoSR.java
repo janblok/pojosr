@@ -110,17 +110,21 @@ public class PojoSR implements PojoServiceRegistry
         String extraSystemPackages = (String) config.get(Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA);
         processCommaSeparatedList(frameworkBundle, extraSystemPackages, extraPackagesMap);
         Set<String> extraPacakgesSet = extraPackagesMap.get(frameworkBundle);
-        for (String packageName : extraPacakgesSet) {
-        	SystemPackages.addExtraPackage(packageName);
-		}
+        if (extraPacakgesSet != null) {	
+        	for (String packageName : extraPacakgesSet) {
+        		SystemPackages.addExtraPackage(packageName);
+			}
+        }
         
         Map<Bundle,Set<String>> extraBundlesMap = new HashMap<>();
         String extraSystemBundles = (String) config.get("org.osgi.framework.system.bundles.extra");
         processCommaSeparatedList(frameworkBundle, extraSystemBundles, extraBundlesMap);
         Set<String> extraBundlesSet = extraBundlesMap.get(frameworkBundle);
-        for (String bundleName : extraBundlesSet) {
-        	SystemBundles.addExtraBundle(bundleName);
-		}
+        if (extraBundlesSet != null) {
+	        for (String bundleName : extraBundlesSet) {
+	        	SystemBundles.addExtraBundle(bundleName);
+			}
+        }
 	}
 
 	private Bundle createPojoSRFrameworkBundle() throws BundleException 

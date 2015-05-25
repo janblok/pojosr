@@ -81,7 +81,7 @@ public class PojoServiceRegistryFactoryImpl implements PojoServiceRegistryFactor
 
 		public void start() throws BundleException {
 			try {
-				m_reg.startBundles((m_filter != null) ? new ClasspathScanner()
+				m_reg.scanBundles((m_filter != null) ? new ClasspathScanner()
 					.scanForBundles(m_filter)
 					: new ClasspathScanner().scanForBundles());
 			} catch (Exception e) {

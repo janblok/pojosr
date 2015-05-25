@@ -75,29 +75,51 @@ public class PojoSR implements PojoServiceRegistry
     private final Map<Long, Bundle> m_bundles =new HashMap<Long, Bundle>();
     private final Map<String, Bundle> m_symbolicNameToBundle = new HashMap<String, Bundle>();
     private final Map<String, Object> bundleConfig;
-    
+
+    //temp info during start
+	private Map<Bundle,Set<String>> exportedPackages = new HashMap<>();
+	private Map<Bundle,Set<String>> importedPackages = new HashMap<>();
+	private Map<Bundle,Set<String>> requiredBundles = new HashMap<>();
+	private Map<Bundle,Set<Bundle>> dependencies = new HashMap<>();
+	
     public PojoSR(Map<String, Object> config) throws Exception
     {
         bundleConfig = new HashMap<>(config);
         Bundle b = createPojoSRFrameworkBundle();
         m_context = b.getBundleContext();
 
-        handleFrameworkSystemPackagesExtra(config, b);
+        handleFrameworkSystemExtra(config, b);
         
-        List<BundleDescriptor> scan = (List<BundleDescriptor>) config.get(PojoServiceRegistryFactory.BUNDLE_DESCRIPTORS);
-        if (scan != null)
+        List<BundleDescriptor> bundleDescriptors = (List<BundleDescriptor>) config.get(PojoServiceRegistryFactory.BUNDLE_DESCRIPTORS);
+        if (bundleDescriptors != null)
         {
-            startBundles(scan);
-		}
+            scanBundles(bundleDescriptors);
+    		resolveBundles();
+            startBundles();
+            
+            //clean temp info
+            exportedPackages = null;
+            importedPackages = null;
+            requiredBundles = null;
+            dependencies = null;
+    	}
     }
 
-	private void handleFrameworkSystemPackagesExtra(Map<String, Object> config, Bundle b) {
+	private void handleFrameworkSystemExtra(Map<String, Object> config, Bundle frameworkBundle) {
 		Map<Bundle,Set<String>> extraPackagesMap = new HashMap<>();
-        String extraPackages = (String) config.get(Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA);
-        processCommaSeparatedList(b, extraPackages, extraPackagesMap);
-        Set<String> extraPacakgesSet = extraPackagesMap.get(b);
+        String extraSystemPackages = (String) config.get(Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA);
+        processCommaSeparatedList(frameworkBundle, extraSystemPackages, extraPackagesMap);
+        Set<String> extraPacakgesSet = extraPackagesMap.get(frameworkBundle);
         for (String packageName : extraPacakgesSet) {
         	SystemPackages.addExtraPackage(packageName);
+		}
+        
+        Map<Bundle,Set<String>> extraBundlesMap = new HashMap<>();
+        String extraSystemBundles = (String) config.get("org.osgi.framework.system.bundles.extra");
+        processCommaSeparatedList(frameworkBundle, extraSystemBundles, extraBundlesMap);
+        Set<String> extraBundlesSet = extraBundlesMap.get(frameworkBundle);
+        for (String bundleName : extraBundlesSet) {
+        	SystemBundles.addExtraBundle(bundleName);
 		}
 	}
 
@@ -332,9 +354,9 @@ public class PojoSR implements PojoServiceRegistry
 		return b;
 	}
 
-	public void startBundles(List<BundleDescriptor> scan) throws Exception 
+	public void scanBundles(List<BundleDescriptor> bundleDescriptors) throws Exception 
 	{
-		for (BundleDescriptor desc : scan)
+		for (BundleDescriptor desc : bundleDescriptors)
         {
             URL u = new URL(desc.getUrl().toExternalForm() + "META-INF/MANIFEST.MF");
             Revision r;
@@ -402,20 +424,7 @@ public class PojoSR implements PojoServiceRegistry
                 }
             }
         }
-		resolveBundles();
-        startBundles();
-        
-        //clean
-        exportedPackages = null;
-        importedPackages = null;
-        requiredBundles = null;
-        dependencies = null;
 	}
-
-	private Map<Bundle,Set<String>> exportedPackages = new HashMap<>();
-	private Map<Bundle,Set<String>> importedPackages = new HashMap<>();
-	private Map<Bundle,Set<String>> requiredBundles = new HashMap<>();
-	private Map<Bundle,Set<Bundle>> dependencies = new HashMap<>();
 	
 	//puts bundles back in installed state if missing dependencies, and build dependency list for startBundle
 	private void resolveBundles() {
@@ -452,6 +461,7 @@ public class PojoSR implements PojoServiceRegistry
 		for (Entry<Bundle, Set<String>> elem : requiredBundles.entrySet()) {
 			Set<String> requiredBundleNames = elem.getValue();
 			for (String requiredBundleName : requiredBundleNames) {
+				if (SystemBundles.containsBundle(requiredBundleName)) continue;
 				PojoSRBundle bundle = (PojoSRBundle) elem.getKey();
 				if (bundle.getState() != Bundle.RESOLVED) continue;
 				Bundle dependBundle = m_symbolicNameToBundle.get(requiredBundleName);

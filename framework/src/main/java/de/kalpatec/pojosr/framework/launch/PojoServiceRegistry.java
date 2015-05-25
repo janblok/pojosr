@@ -27,7 +27,7 @@ public interface PojoServiceRegistry {
     
     public BundleContext getBundleContext();
 
-    public void startBundles(List<BundleDescriptor> bundles) throws Exception;
+    public void scanBundles(List<BundleDescriptor> bundles) throws Exception;
 
     public void addServiceListener(ServiceListener listener, String filter)
             throws InvalidSyntaxException;

@@ -187,7 +187,7 @@ public class PojoSR implements PojoServiceRegistry
 		                    {
 		                        if (b != systemBundle)
 		                        {
-		                            b.stop();
+		                            if (b.getState() == Bundle.ACTIVE) b.stop();
 		                        }
 		                    }
 		                    catch (Throwable t)
@@ -195,8 +195,7 @@ public class PojoSR implements PojoServiceRegistry
 		                        t.printStackTrace();
 		                    }
 		                }
-		                m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STOPPED,
-		                		systemBundle));
+		                m_dispatcher.fireBundleEvent(new BundleEvent(BundleEvent.STOPPED, systemBundle));
 		                m_state = Bundle.RESOLVED;
 		                m_dispatcher.stopDispatching();
 					}
@@ -225,8 +224,7 @@ public class PojoSR implements PojoServiceRegistry
                         // TODO Auto-generated method stub
                     }
 
-                    public void setBundleStartLevel(Bundle bundle,
-                            int startlevel)
+                    public void setBundleStartLevel(Bundle bundle, int startlevel)
                     {
                         // TODO Auto-generated method stub
                     }
@@ -277,8 +275,7 @@ public class PojoSR implements PojoServiceRegistry
                                 FrameworkEvent.PACKAGES_REFRESHED, b, null));
                     }
 
-                    public RequiredBundle[] getRequiredBundles(
-                            String symbolicName)
+                    public RequiredBundle[] getRequiredBundles(String symbolicName)
                     {
                         return null;
                     }
